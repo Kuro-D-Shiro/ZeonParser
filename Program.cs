@@ -1,3 +1,5 @@
+using ZeonParser.Parser.Settings;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var config = new ConfigurationBuilder()
@@ -5,6 +7,8 @@ var config = new ConfigurationBuilder()
     .AddJsonFile("appsettings.Development.json")
     .AddEnvironmentVariables()
     .Build();
+
+builder.Services.Configure<ZeonParserSettings>(config.GetSection(nameof(ZeonParserSettings)));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

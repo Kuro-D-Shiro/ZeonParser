@@ -2,5 +2,7 @@
 {
     public class ZeonParserSettings
     {
+        public string Url { get; set; }
+        public string UserAgent { get; set; }
     }
 }
