@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ZeonParser.Models
+﻿namespace ZeonParser.Models
 {
     public class Product
     {

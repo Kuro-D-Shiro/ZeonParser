@@ -11,6 +11,7 @@ var config = new ConfigurationBuilder()
 builder.Services.Configure<ZeonParserSettings>(config.GetSection(nameof(ZeonParserSettings)));
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
