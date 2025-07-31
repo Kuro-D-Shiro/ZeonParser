@@ -1,3 +1,5 @@
+using ZeonParser.Parser;
+using ZeonParser.Parser.Interfaces;
 using ZeonParser.Parser.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +11,8 @@ var config = new ConfigurationBuilder()
     .Build();
 
 builder.Services.Configure<ZeonParserSettings>(config.GetSection(nameof(ZeonParserSettings)));
+
+builder.Services.AddScoped<IHtmlLoader, HtmlLoader>();
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();

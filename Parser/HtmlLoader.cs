@@ -16,8 +16,8 @@ namespace ZeonParser.Parser
             {
                 httpClient.DefaultRequestHeaders.Add("User-Agent", _parserSettings.UserAgent);
                 var response = await httpClient.GetAsync(url);
-                html = response != null && response.IsSuccessStatusCode ? 
-                    await response.Content.ReadAsStringAsync() 
+                html = response != null && response.IsSuccessStatusCode ?
+                    await response.Content.ReadAsStringAsync()
                     : "";
             }
             return html;
