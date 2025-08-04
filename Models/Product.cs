@@ -8,7 +8,7 @@
         public Decimal? PriceWithoutDiscount { get; set; }
         public Decimal PriceWithDiscount { get; set; }
         public bool InStock { get; set; }
-        public ICollection<Category> Categories { get; set; } = [];
+        public Category Category { get; set; } = new();
     }
     public class Image
     {
