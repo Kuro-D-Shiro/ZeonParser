@@ -1,4 +1,4 @@
-﻿namespace ZeonParser.Parser.Settings
+﻿namespace ZeonService.Parser.Settings
 {
     public class ZeonParserSettings
     {

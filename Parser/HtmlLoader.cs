@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
-using ZeonParser.Parser.Interfaces;
-using ZeonParser.Parser.Settings;
+using ZeonService.Parser.Interfaces;
+using ZeonService.Parser.Settings;
 
-namespace ZeonParser.Parser
+namespace ZeonService.Parser
 {
     public class HtmlLoader(IOptions<ZeonParserSettings> options, IHttpClientFactory httpClientFactory) : IHtmlLoader
     {

@@ -1,4 +1,4 @@
-﻿namespace ZeonParser.Models
+﻿namespace ZeonService.Models
 {
     public class Product
     {

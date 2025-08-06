@@ -1,4 +1,4 @@
-﻿namespace ZeonParser.Parser.Interfaces
+﻿namespace ZeonService.Parser.Interfaces
 {
     public interface IHtmlLoader
     {
