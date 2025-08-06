@@ -1,29 +1,32 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
+using AngleSharp.Html.Parser;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using ZeonService.Models;
+using ZeonService.Parser;
 using ZeonService.Parser.Interfaces;
 using ZeonService.Parser.Settings;
-using AngleSharp.Html.Parser;
-using AngleSharp.Dom;
-using AngleSharp.Html.Dom;
-using ZeonService.Models;
 
 namespace ZeonService.Controllers
 {
     [Route("[controller]/[action]")]
     [ApiController]
-    public class TestController(IHtmlLoader okak, IOptions<ZeonParserSettings> option) : ControllerBase
+    public class TestController(IHtmlLoader okak, IOptions<ZeonParserSettings> option, IZeonParser zeonParser) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult> Test()
         {
-            var HTMLString = await okak.LoadPageByURL(option.Value.Url);
-
-            var page = await ZeonPage.TryCreate(HTMLString);
+            var mainCategoryElement = await ZeonPage.TryCreate(await okak.LoadPageByURL("https://zeon18.ru/zeon/"));
+            var els = mainCategoryElement.GetElementsBySelector(".catalog-index-cell");
+            
+            await zeonParser.ParseDFS();
+            /*var page = await ZeonPage.TryCreate(HTMLString);
             if (page == null)
             {
                 return StatusCode(500);
             }
-            await Parse(page, ".catalog-menu-list-one");
+            await Parse(page, ".catalog-menu-list-one");*/
 
             return Ok();
         }
@@ -44,7 +47,8 @@ namespace ZeonService.Controllers
 
     public interface IZeonParser
     {
-        public Task Parse();
+        Task Parse();
+        Task ParseDFS();
     }
 
     public class ZeonParser(IHtmlLoader htmlLoader, IOptions<ZeonParserSettings> options) : IZeonParser
@@ -52,6 +56,58 @@ namespace ZeonService.Controllers
         private readonly IHtmlLoader _htmlLoader = htmlLoader;
         private readonly ZeonParserSettings _parserSettings = options.Value;
         private readonly string _mainCategoriesSelector = ".catalog-menu-list-one";
+
+        /*public async Task<T> RecursiveParse<T>(string selector)
+        {
+
+        }*/
+
+        public async Task ParseDFS()
+        {
+            var mainPage = await ZeonPage.TryCreate(await _htmlLoader.LoadPageByURL(_parserSettings.Url));
+
+            var mainCategoryElements = mainPage?.GetElementsBySelector(_mainCategoriesSelector).Skip(5)
+                ?? throw new Exception("Не удалось создать страницу по HTML."); //nullable ???
+
+            foreach (var mainCategoryElement in mainCategoryElements)
+            {
+                var categoryParser = new ZeonCategoryParser(mainCategoryElement);
+                var currentMainCategory = categoryParser.Parse(null);
+
+                var mainCategoryPage = await ZeonPage.TryCreate(currentMainCategory.Link); //nullable ???
+
+                //использовать второй стек для категорий, чтоб из привязывать к дочерним параллельно парсингу !!!
+                Stack<ZeonPage> zeonPages = new Stack<ZeonPage>();
+                var el = await ZeonPage.TryCreate(await _htmlLoader.LoadPageByURL(currentMainCategory.Link)); //тоже переделать
+                zeonPages.Push(el/*mainCategoryPage*/); //nullable ???
+                Stack<Category> categories = new Stack<Category>();
+                categories.Push(currentMainCategory);
+                Category currentSubcategory;
+
+                while (zeonPages.Count > 0)
+                {
+                    var page = zeonPages.Pop();
+                    var parentCategory = categories.Pop();
+
+                    var subcategoryIndexCells = page.GetElementsBySelector(".catalog-index-cell");
+
+                    if(!subcategoryIndexCells.Any())
+                    {
+                        var els = page.GetElementsBySelector(".catalog-grid-cell");
+                    }
+
+                    foreach (var subcategoryIndexCell in subcategoryIndexCells)
+                    {
+                        categoryParser = new ZeonCategoryParser(subcategoryIndexCell);
+                        currentSubcategory = categoryParser.Parse(parentCategory);
+                        categories.Push(currentSubcategory);
+
+                        el = await ZeonPage.TryCreate(parentCategory.Link); //переделать ес чо
+                        zeonPages.Push(el); //nullable ???
+                    }
+                }
+            }    
+        }
 
         public async Task Parse()
         {
@@ -70,14 +126,22 @@ namespace ZeonService.Controllers
             foreach (var mainCategoryElement in mainCategoryElements)
             {
                 var categoryParser = new ZeonCategoryParser(mainCategoryElement);
-                var mainCategory = categoryParser.Parse(null);
+                var currentMainCategory = categoryParser.Parse(null);
 
-                var mainCategoryPage = await ZeonPage.TryCreate(mainCategory.Link);
+                var mainCategoryPage = await ZeonPage.TryCreate(currentMainCategory.Link);
 
                 var subcategoryIndexCells = mainCategoryPage.GetElementsBySelector(".catalog-index-cell");
-                while (subcategoryIndexCells.Any())
+                foreach (var subcategoryIndexCell in subcategoryIndexCells)
                 {
-
+                    while (subcategoryIndexCells.Any())
+                    {
+                        Category currentSubcategory;
+                        /*foreach (var subcategoryIndexCell in subcategoryIndexCells)
+                        {
+                            categoryParser = new ZeonCategoryParser(subcategoryIndexCell);
+                            currentSubcategory = categoryParser.Parse(currentMainCategory);
+                        }*/
+                    }
                 }
             }
         }
@@ -95,7 +159,7 @@ namespace ZeonService.Controllers
             category.ParentCategoryId = parentCategory?.CategoryId
                 ?? null;
             category.Link = _categoryElement.QuerySelector("a")?.GetAttribute("href")
-                ?? throw new Exception("У блока категории не нашлось ссылки на неё.");
+                ?? throw new Exception("У блока категории не нашлось ссылки на неё."); //nullable ???
             return category;
         }
     }

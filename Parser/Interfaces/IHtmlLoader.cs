@@ -2,6 +2,6 @@
 {
     public interface IHtmlLoader
     {
-        public Task<string> LoadPageByURL(string url);
+        Task<string> LoadPageByURL(string url);
     }
 }
