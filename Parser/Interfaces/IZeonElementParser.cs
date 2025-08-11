@@ -1,6 +1,9 @@
-﻿namespace ZeonService.Parser.Interfaces
+﻿using ZeonService.Models;
+
+namespace ZeonService.Parser.Interfaces
 {
-    public interface IZeonElementParser
+    public interface IZeonElementParser<T> 
     {
+        Task<T> Parse(Category category);
     }
 }

@@ -5,11 +5,14 @@ using ZeonService.Parser.Settings;
 
 namespace ZeonService.Parser.Parsers
 {
-    public class ZeonParser(IHtmlLoader htmlLoader, IOptions<ZeonParserSettings> options) : IZeonParser
+    public class ZeonParser(IHtmlLoader htmlLoader,
+        IOptions<ZeonParserSettings> options,
+        IDownloadAndSaveImageService downloadAndSaveImageService) : IZeonParser
     {
-        private readonly IHtmlLoader _htmlLoader = htmlLoader;
-        private readonly ZeonParserSettings _parserSettings = options.Value;
-        private readonly string _mainCategoriesSelector = ".catalog-menu-list-one";
+        private readonly IHtmlLoader htmlLoader = htmlLoader;
+        private readonly ZeonParserSettings parserSettings = options.Value;
+        private readonly IDownloadAndSaveImageService downloadAndSaveImageService = downloadAndSaveImageService;
+        private readonly string mainCategoriesSelector = ".catalog-menu-list-one";
 
         /*public async Task<T> RecursiveParse<T>(string selector)
         {
@@ -18,20 +21,22 @@ namespace ZeonService.Parser.Parsers
 
         public async Task Parse()
         {
-            var mainPage = await ZeonPage.TryCreate(await _htmlLoader.LoadPageByURL(_parserSettings.Url));
+            ZeonCategoryParser categoryParser;
+            ZeonProductParser productParser;
+            var mainPage = await ZeonPage.TryCreate(await htmlLoader.Download(parserSettings.Url));
 
-            var mainCategoryElements = mainPage.GetElementsBySelector(_mainCategoriesSelector).Skip(5);
+            var mainCategoryElements = mainPage.GetElementsBySelector(mainCategoriesSelector).Skip(5);
 
             foreach (var mainCategoryElement in mainCategoryElements)
             {
-                var categoryParser = new ZeonCategoryParser(mainCategoryElement);
-                var currentMainCategory = categoryParser.Parse(null);
+                categoryParser = new ZeonCategoryParser(mainCategoryElement);
+                var currentMainCategory = await categoryParser.Parse(null);
 
                 var mainCategoryPage = await ZeonPage.TryCreate(currentMainCategory.Link);
 
-                Stack<ZeonPage> zeonPages = new Stack<ZeonPage>();
-                zeonPages.Push(await ZeonPage.TryCreate(await _htmlLoader.LoadPageByURL(currentMainCategory.Link)));
-                Stack<Category> categories = new Stack<Category>();
+                Stack<ZeonPage> zeonPages = [];
+                zeonPages.Push(await ZeonPage.TryCreate(await htmlLoader.Download(currentMainCategory.Link)));
+                Stack<Category> categories = [];
                 categories.Push(currentMainCategory);
                 Category currentSubcategory;
 
@@ -44,16 +49,21 @@ namespace ZeonService.Parser.Parsers
 
                     if (!subcategoryIndexCells.Any())
                     {
-                        //логика парсинга товара
+                        var productsGridCells = page.GetElementsBySelector(".catalog-grid-cell");
+                        foreach (var productsGridCell in productsGridCells)
+                        {
+                            productParser = new ZeonProductParser(productsGridCell, downloadAndSaveImageService);
+                            var okak = productParser.Parse(parentCategory);
+                        }
                     }
 
                     foreach (var subcategoryIndexCell in subcategoryIndexCells)
                     {
                         categoryParser = new ZeonCategoryParser(subcategoryIndexCell);
-                        currentSubcategory = categoryParser.Parse(parentCategory);
+                        currentSubcategory = await categoryParser.Parse(parentCategory);
                         categories.Push(currentSubcategory);
 
-                        zeonPages.Push(await ZeonPage.TryCreate(await _htmlLoader.LoadPageByURL(currentSubcategory.Link)));
+                        zeonPages.Push(await ZeonPage.TryCreate(await htmlLoader.Download(currentSubcategory.Link)));
                     }
                 }
             }

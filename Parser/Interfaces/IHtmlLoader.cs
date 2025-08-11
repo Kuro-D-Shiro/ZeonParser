@@ -1,7 +1,6 @@
 ﻿namespace ZeonService.Parser.Interfaces
 {
-    public interface IHtmlLoader
+    public interface IHtmlLoader : IDataDownloader<string>
     {
-        Task<string> LoadPageByURL(string url);
     }
 }

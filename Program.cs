@@ -1,7 +1,7 @@
-using ZeonService.Controllers;
-using ZeonService.Parser;
+using ZeonService.Parser.Parsers;
 using ZeonService.Parser.Interfaces;
 using ZeonService.Parser.Settings;
+using ZeonService.Parser.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +16,9 @@ builder.Services.Configure<ZeonParserSettings>(config.GetSection(nameof(ZeonPars
 
 builder.Services.AddScoped<IHtmlLoader, HtmlLoader>();
 builder.Services.AddScoped<IZeonParser, ZeonParser>();
+builder.Services.AddScoped<IImageDownloader, ImageDownloader>();
+builder.Services.AddScoped<IImageSaver, ImageToFileSaver>();
+builder.Services.AddScoped<IDownloadAndSaveImageService, ZeonDownloadAndSaveImageService>();
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
