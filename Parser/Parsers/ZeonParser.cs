@@ -7,30 +7,23 @@ namespace ZeonService.Parser.Parsers
 {
     public class ZeonParser(IHtmlLoader htmlLoader,
         IOptions<ZeonParserSettings> options,
-        IDownloadAndSaveImageService downloadAndSaveImageService) : IZeonParser
+        IZeonCategoryParser zeonCategoryParser,
+        IZeonProductParser zeonProductParser) : IZeonParser
     {
         private readonly IHtmlLoader htmlLoader = htmlLoader;
         private readonly ZeonParserSettings parserSettings = options.Value;
-        private readonly IDownloadAndSaveImageService downloadAndSaveImageService = downloadAndSaveImageService;
+        private readonly IZeonCategoryParser zeonCategoryParser = zeonCategoryParser;
+        private readonly IZeonProductParser zeonProductParser = zeonProductParser;
         private readonly string mainCategoriesSelector = ".catalog-menu-list-one";
-
-        /*public async Task<T> RecursiveParse<T>(string selector)
-        {
-
-        }*/
 
         public async Task Parse()
         {
-            ZeonCategoryParser categoryParser;
-            ZeonProductParser productParser;
             var mainPage = await ZeonPage.TryCreate(await htmlLoader.Download(parserSettings.Url));
-
             var mainCategoryElements = mainPage.GetElementsBySelector(mainCategoriesSelector).Skip(5);
 
             foreach (var mainCategoryElement in mainCategoryElements)
             {
-                categoryParser = new ZeonCategoryParser(mainCategoryElement);
-                var currentMainCategory = await categoryParser.Parse(null);
+                var currentMainCategory = await zeonCategoryParser.Parse(mainCategoryElement, null);
 
                 var mainCategoryPage = await ZeonPage.TryCreate(currentMainCategory.Link);
 
@@ -52,15 +45,13 @@ namespace ZeonService.Parser.Parsers
                         var productsGridCells = page.GetElementsBySelector(".catalog-grid-cell");
                         foreach (var productsGridCell in productsGridCells)
                         {
-                            productParser = new ZeonProductParser(productsGridCell, downloadAndSaveImageService);
-                            var okak = productParser.Parse(parentCategory);
+                            var okak = zeonCategoryParser.Parse(productsGridCell, parentCategory);
                         }
                     }
 
                     foreach (var subcategoryIndexCell in subcategoryIndexCells)
                     {
-                        categoryParser = new ZeonCategoryParser(subcategoryIndexCell);
-                        currentSubcategory = await categoryParser.Parse(parentCategory);
+                        currentSubcategory = await zeonCategoryParser.Parse(subcategoryIndexCell, parentCategory);
                         categories.Push(currentSubcategory);
 
                         zeonPages.Push(await ZeonPage.TryCreate(await htmlLoader.Download(currentSubcategory.Link)));

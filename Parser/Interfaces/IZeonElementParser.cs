@@ -1,9 +1,10 @@
-﻿using ZeonService.Models;
+﻿using AngleSharp.Dom;
+using ZeonService.Models;
 
 namespace ZeonService.Parser.Interfaces
 {
     public interface IZeonElementParser<T> 
     {
-        Task<T> Parse(Category category);
+        Task<T> Parse(IElement element, Category category);
     }
 }

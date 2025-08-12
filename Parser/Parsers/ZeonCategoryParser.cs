@@ -4,12 +4,9 @@ using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Parsers
 {
-    class ZeonCategoryParser(IElement categoryElement) : IZeonElementParser<Category>
+    class ZeonCategoryParser : IZeonCategoryParser
     {
-        private readonly IElement categoryElement = categoryElement;
-
-        //переделать метод, так чтоб можно эту темку в DI пихнуть
-        public Task<Category> Parse(Category? parentCategory)
+        public Task<Category> Parse(IElement categoryElement, Category? parentCategory)
         {
             var category = new Category();
             category.Name = categoryElement.TextContent;

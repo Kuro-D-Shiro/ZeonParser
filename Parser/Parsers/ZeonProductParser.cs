@@ -1,19 +1,15 @@
 ﻿using AngleSharp.Dom;
-using Microsoft.AspNetCore.Mvc;
-using System.Net.Http;
 using ZeonService.Models;
 using ZeonService.Parser.Extentions;
 using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Parsers
 {
-    public class ZeonProductParser(IElement productElement, IDownloadAndSaveImageService downloadAndSaveImageService) : IZeonElementParser<Product>
+    public class ZeonProductParser(IDownloadAndSaveImageService downloadAndSaveImageService) : IZeonProductParser
     {
-        private readonly IElement productElement = productElement;
         private readonly IDownloadAndSaveImageService downloadAndSaveImageService = downloadAndSaveImageService;
 
-        //переделать метод, так чтоб можно эту темку в DI пихнуть
-        public async Task<Product> Parse(Category category)
+        public async Task<Product> Parse(IElement productElement, Category category)
         {
             var product = new Product();
 

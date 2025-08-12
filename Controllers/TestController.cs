@@ -3,6 +3,7 @@ using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using ZeonService.Data;
 using ZeonService.Models;
 using ZeonService.Parser;
 using ZeonService.Parser.Interfaces;
@@ -14,7 +15,7 @@ namespace ZeonService.Controllers
     [Route("[controller]/[action]")]
     [ApiController]
     public class TestController(IHtmlLoader okak, IOptions<ZeonParserSettings> option, IZeonParser zeonParser,
-        IDownloadAndSaveImageService downloadAndSaveImageService) : ControllerBase
+        IDownloadAndSaveImageService downloadAndSaveImageService, ZeonDbContext zeonDbContext) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult> Test()
