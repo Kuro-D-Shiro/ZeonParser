@@ -2,7 +2,7 @@
 {
     public class Category
     {
-        public int CategoryId { get; set; } 
+        public long CategoryId { get; set; } 
         public string Name { get; set; }
         public string Link { get; set; }
         public long? ParentCategoryId { get; set; } = null;

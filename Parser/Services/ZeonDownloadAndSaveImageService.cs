@@ -17,9 +17,19 @@ namespace ZeonService.Parser.Services
                 return null;
 
             byte[] imageBytes = await imageDownloader.Download(url);
-            var imagePath = $"ProductImages/{productName}{imageFormat}";
+            var imagePath = $"ProductImages/{SanitizeFileName(productName)}{imageFormat}";
             await imageSaver.Save(imageBytes, imagePath);
             return imagePath;
+        }
+
+        private string SanitizeFileName(string fileName)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            foreach (var invalidChar in invalidChars)
+            {
+                fileName = fileName.Replace(invalidChar, '_');
+            }
+            return fileName;
         }
     }
 }

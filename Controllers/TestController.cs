@@ -2,6 +2,7 @@
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using ZeonService.Data;
 using ZeonService.Models;
@@ -20,8 +21,8 @@ namespace ZeonService.Controllers
         [HttpGet]
         public async Task<ActionResult> Test()
         {
-            string okak = await downloadAndSaveImageService.DownloadAndSaveImage("https://i.pinimg.com/originals/93/4b/f9/934bf9b266eeda0e576857434f4cf596.gif", "ABOB2");
-           /* await zeonParser.Parse();*/
+            await zeonParser.Parse();
+            //zeonDbContext.Database.ExecuteSqlRaw("insert into categories (name, link, parent_category_id) values ('ABOBA', '1235', null)");
             return Ok();
         }
 

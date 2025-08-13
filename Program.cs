@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using ZeonService.Data;
+using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
 using ZeonService.Parser.Parsers;
+using ZeonService.Parser.Repositories;
 using ZeonService.Parser.Services;
 using ZeonService.Parser.Settings;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +24,8 @@ builder.Services.AddScoped<IImageSaver, ImageToFileSaver>();
 builder.Services.AddScoped<IDownloadAndSaveImageService, ZeonDownloadAndSaveImageService>();
 builder.Services.AddScoped<IZeonProductParser, ZeonProductParser>();
 builder.Services.AddScoped<IZeonCategoryParser, ZeonCategoryParser>();
+builder.Services.AddScoped<IRepository<Category>, CategoryRepository>();
+builder.Services.AddScoped<IRepository<Product>, ProductRepository>();
 
 builder.Services.AddDbContext<ZeonDbContext>(options => options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();

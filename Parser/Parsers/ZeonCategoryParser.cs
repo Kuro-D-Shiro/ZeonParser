@@ -4,18 +4,23 @@ using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Parsers
 {
-    class ZeonCategoryParser : IZeonCategoryParser
+    class ZeonCategoryParser(IRepository<Category> repository) : IZeonCategoryParser
     {
-        public Task<Category> Parse(IElement categoryElement, Category? parentCategory)
+        public async Task<Category> Parse(IElement categoryElement, Category? parentCategory)
         {
+            if (parentCategory != null)
+            {
+                parentCategory = await repository.GetByName(parentCategory.Name);
+            }
+
             var category = new Category();
-            category.Name = categoryElement.TextContent;
+            category.Name = categoryElement.TextContent.Trim();
             category.ParentCategory = parentCategory;
             category.ParentCategoryId = parentCategory?.CategoryId
                 ?? null;
             category.Link = categoryElement.QuerySelector("a")?.GetAttribute("href")
                 ?? throw new Exception("У блока категории не нашлось ссылки на неё."); //nullable ???
-            return Task.FromResult(category);
+            return category;
         }
     }
 }
