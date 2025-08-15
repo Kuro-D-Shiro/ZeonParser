@@ -14,8 +14,6 @@ namespace ZeonService.Data.EntityConfiguration
                 .HasName("product_pkey");
             entityBulder.HasAlternateKey(e => e.Link)
                 .HasName("product_link_key");
-            entityBulder.HasAlternateKey(e => e.Name)
-                .HasName("product_name_key");
 
             entityBulder.Property(e => e.ProductId)
                 .HasColumnName("product_id");
@@ -38,6 +36,10 @@ namespace ZeonService.Data.EntityConfiguration
                 .IsRequired()
                 .HasColumnType("decimal(18,2)")
                 .HasColumnName("current_price");
+            entityBulder.Property(e => e.Description)
+                .IsRequired()
+                .HasMaxLength(500)
+                .HasColumnName("description");
             entityBulder.Property(e => e.InStock)
                 .IsRequired()
                 .HasColumnName("in_stock");
@@ -52,6 +54,8 @@ namespace ZeonService.Data.EntityConfiguration
 
             entityBulder.HasIndex(e => e.CategoryId)
                 .HasDatabaseName("idx_product_category_id_fkey");
+            entityBulder.HasIndex(e => e.Name)
+                .HasDatabaseName("idx_product_name");
         }
     }
 }

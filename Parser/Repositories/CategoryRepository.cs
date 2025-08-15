@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using ZeonService.Data;
 using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
@@ -10,14 +12,16 @@ namespace ZeonService.Parser.Repositories
     {
         private readonly ZeonDbContext zeonDbContext = zeonDbContext;
 
-        public async Task<IEnumerable<Category>> GetAll()
+        public IEnumerable<Category> GetAll()
         {
-            throw new NotImplementedException();
+            return zeonDbContext.Categories
+                .FromSqlRaw("select * from categories").AsEnumerable();
         }
 
         public async Task<Category> GetById(int id)
         {
-            throw new NotImplementedException();
+            return await zeonDbContext.Categories
+                .FromSqlRaw("select * from categories where category_id = {0}", id).FirstAsync();
         }
 
         public async Task<Category> GetByName(string name)
@@ -26,21 +30,31 @@ namespace ZeonService.Parser.Repositories
                 .FromSqlRaw("select * from categories where name = {0}", name).FirstAsync();
         }
 
-        public async Task Create(Category item)
+        public async Task<long> Create(Category item)
         {
-            await zeonDbContext.Database
-                .ExecuteSqlRawAsync("insert into categories (name, link, parent_category_id) values ({0}, {1}, {2})",
-                item.Name, item.Link, item.ParentCategoryId);
+            if (!await zeonDbContext.Categories
+                .FromSqlRaw("select * from categories where link = {0}", item.Link).AnyAsync())
+            {
+                return zeonDbContext.Database
+                    .SqlQueryRaw<long>("insert into categories (name, link, parent_category_id) values ({0}, {1}, {2}) returning category_id",
+                    item.Name, item.Link, item.ParentCategoryId)
+                    .AsEnumerable()
+                    .First();
+            }
+            else return -1;
         }
 
         public async Task Update(Category item)
         {
-            throw new NotImplementedException();
+            await zeonDbContext.Database
+                .ExecuteSqlRawAsync("update categories set" +
+                "name = {0} where link = {1}", item.Name, item.Link);
         }
 
         public async Task Delete(int id)
         {
-            throw new NotImplementedException();
+            await zeonDbContext.Database
+                .ExecuteSqlRawAsync("delete from categories where category_id = {0}", id);
         }
     }
 }

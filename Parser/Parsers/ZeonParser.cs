@@ -28,20 +28,20 @@ namespace ZeonService.Parser.Parsers
             {
                 var currentMainCategory = await zeonCategoryParser.Parse(mainCategoryElement, null);
 
-                await catgoryRepository.Create(currentMainCategory);
+                var currentMainCategoryId = await catgoryRepository.Create(currentMainCategory);
 
                 var mainCategoryPage = await ZeonPage.TryCreate(currentMainCategory.Link);
 
                 Stack<ZeonPage> zeonPages = [];
                 zeonPages.Push(await ZeonPage.TryCreate(await htmlLoader.Download(currentMainCategory.Link)));
-                Stack<Category> categories = [];
-                categories.Push(currentMainCategory);
+                Stack<long> categories = [];
+                categories.Push(currentMainCategoryId);
                 Category currentSubcategory;
 
                 while (zeonPages.Count > 0)
                 {
                     var page = zeonPages.Pop();
-                    var parentCategory = categories.Pop();
+                    var parentCategoryId = categories.Pop();
 
                     var subcategoryIndexCells = page.GetElementsBySelector(parserSettings.Selectors.SubcategorySelector);
 
@@ -50,23 +50,25 @@ namespace ZeonService.Parser.Parsers
                         var productsGridCells = page.GetElementsBySelector(parserSettings.Selectors.ProductSelector);
                         foreach (var productsGridCell in productsGridCells)
                         {
-                            var product = await zeonProductParser.Parse(productsGridCell, parentCategory);
-                            await productRepository.Create(product);
-                            await Task.Delay(2000);
+                            var product = await zeonProductParser.Parse(productsGridCell, parentCategoryId);
+                            if (await productRepository.Create(product) == -1)
+                                await productRepository.Update(product);
+                            //await Task.Delay(2000);
                         }
                     }
 
                     foreach (var subcategoryIndexCell in subcategoryIndexCells)
                     {
-                        currentSubcategory = await zeonCategoryParser.Parse(subcategoryIndexCell, parentCategory);
-                        categories.Push(currentSubcategory);
-                        await catgoryRepository.Create(currentSubcategory);
+                        currentSubcategory = await zeonCategoryParser.Parse(subcategoryIndexCell, parentCategoryId);
+                        var currentSubcategoryId = await catgoryRepository.Create(currentSubcategory);
+                        if (currentSubcategoryId == -1L) continue;
+                        categories.Push(currentSubcategoryId);
 
                         zeonPages.Push(await ZeonPage.TryCreate(await htmlLoader.Download(currentSubcategory.Link)));
-                        await Task.Delay(2000);
+                        //await Task.Delay(2000);
                     }
                 }
-                await Task.Delay(20000);
+                //await Task.Delay(20000);
             }
         }
     }

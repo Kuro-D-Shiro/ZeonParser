@@ -5,22 +5,18 @@ using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Parsers
 {
-    public class ZeonProductParser(IDownloadAndSaveImageService downloadAndSaveImageService,
-        IRepository<Category> repository) : IZeonProductParser
+    public class ZeonProductParser(IDownloadAndSaveImageService downloadAndSaveImageService) : IZeonProductParser
     {
         private readonly IDownloadAndSaveImageService downloadAndSaveImageService = downloadAndSaveImageService;
-        private readonly IRepository<Category> repository = repository;
 
-        public async Task<Product> Parse(IElement productElement, Category category)
+        public async Task<Product> Parse(IElement productElement, long? categoryId)
         {
-            category = await repository.GetByName(category.Name);
-
             var product = new Product();
 
             IElement productInfo = productElement?.QuerySelector(".catalog-item-info")
-                ?? throw new Exception("Лееееееееее инфы нет");
+                ?? throw new Exception(productElement.OuterHtml);
             IElement productPrice = productElement?.QuerySelector(".catalog-item-price-main")
-                ?? throw new Exception("Лееееееееее цены нет");
+                ?? throw new Exception(productElement.OuterHtml);
 
             product.Name = productInfo?.QuerySelector("a")?.TextContent.Trim()
                 ?? throw new Exception("У элемента не было текстового контента");
@@ -35,8 +31,11 @@ namespace ZeonService.Parser.Parsers
                 ?? throw new Exception("Не нашёлся тег с ценой");
             product.OldPrice = productPrice.QuerySelector(".catalog-item-price-old")?.TextContent.ParsePriceFromString()
                 ?? null;
-            product.Category = category;
-            product.CategoryId = category.CategoryId;
+            product.Description = productInfo.QuerySelector(".if-size-not-pc a")?.TextContent.Replace("[", "").Replace("]", "")
+                ?? throw new Exception("Не нашёлся тег с описанием");
+            product.InStock = true;
+            product.CategoryId = categoryId
+                ?? throw new Exception("Товар без категории быть не может");
             
             return product;
         }

@@ -1,5 +1,4 @@
-﻿
-namespace ZeonService.Parser.Interfaces
+﻿namespace ZeonService.Parser.Interfaces
 {
     public interface IImageSaver : IDataSaver<byte[]>
     {

@@ -41,6 +41,8 @@ namespace ZeonService.Data.EntityConfiguration
 
             entityBuilder.HasIndex(e => e.ParentCategoryId)
                 .HasDatabaseName("idx_category_parent_category_id_fkey");
+            entityBuilder.HasIndex(e => e.Name)
+                .HasDatabaseName("idx_category_name");
         }
     }
 }
