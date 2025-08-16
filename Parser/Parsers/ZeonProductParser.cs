@@ -33,7 +33,6 @@ namespace ZeonService.Parser.Parsers
                 ?? null;
             product.Description = productInfo.QuerySelector(".if-size-not-pc a")?.TextContent.Replace("[", "").Replace("]", "")
                 ?? throw new Exception("Не нашёлся тег с описанием");
-            product.InStock = true;
             product.CategoryId = categoryId
                 ?? throw new Exception("Товар без категории быть не может");
             

@@ -36,10 +36,10 @@ namespace ZeonService.Parser.Repositories
             {
                 return zeonDbContext.Database
                     .SqlQueryRaw<long>("insert into products (name, link, image_path, old_price," +
-                    " current_price, description, in_stock, category_id)" +
-                    " values ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}) returning product_id",
+                    " current_price, description, updated_at, category_id)" +
+                    " values ({0}, {1}, {2}, {3}, {4}, {5}, CURRENT_TIMESTAMP, {6}) returning product_id",
                     item.Name, item.Link, item.ImagePath, item.OldPrice,
-                    item.CurrentPrice, item.Description, item.InStock, item.CategoryId)
+                    item.CurrentPrice, item.Description, item.CategoryId)
                     .AsEnumerable()
                     .First();
             }
@@ -58,7 +58,7 @@ namespace ZeonService.Parser.Repositories
                 .ExecuteSqlRawAsync("update product" +
                 "set name = {0}, image_path = {1}" +
                 "old_price = {2}, current_price = {3}," +
-                "discription = {4}, category_id = {5}" +
+                "discription = {4}, updated_at = CURRENT_TIMESTAMP, category_id = {5}" +
                 "where link = {6}", item.Name, item.ImagePath,
                 item.OldPrice, item.CurrentPrice, item.Description, item.CategoryId, item.Link);
         }

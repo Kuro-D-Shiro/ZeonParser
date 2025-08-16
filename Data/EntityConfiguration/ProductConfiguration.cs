@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AngleSharp.Dom;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ZeonService.Models;
 
@@ -9,6 +10,14 @@ namespace ZeonService.Data.EntityConfiguration
         public void Configure(EntityTypeBuilder<Product> entityBulder)
         {
             entityBulder.ToTable("products");
+            entityBulder.ToTable(e => e.HasCheckConstraint(
+                "ck_product_current_price",
+                "current_price > 0"
+            ));
+            entityBulder.ToTable(e => e.HasCheckConstraint(
+                "ck_product_price_logic",
+                "old_price is null or old_price > current_price"
+            ));
 
             entityBulder.HasKey(e => e.ProductId)
                 .HasName("product_pkey");
@@ -40,9 +49,9 @@ namespace ZeonService.Data.EntityConfiguration
                 .IsRequired()
                 .HasMaxLength(500)
                 .HasColumnName("description");
-            entityBulder.Property(e => e.InStock)
+            entityBulder.Property(e => e.UpdatedAt)
                 .IsRequired()
-                .HasColumnName("in_stock");
+                .HasColumnName("updated_at");
             entityBulder.Property(e => e.CategoryId)
                 .HasColumnName("category_id");
 
