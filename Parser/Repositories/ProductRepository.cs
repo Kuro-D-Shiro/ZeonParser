@@ -55,10 +55,10 @@ namespace ZeonService.Parser.Repositories
         public async Task Update(Product item)
         {
             await zeonDbContext.Database
-                .ExecuteSqlRawAsync("update product" +
-                "set name = {0}, image_path = {1}," +
-                "old_price = {2}, current_price = {3}," +
-                "description = {4}, updated_at = CURRENT_TIMESTAMP, category_id = {5}" +
+                .ExecuteSqlRawAsync("update products " +
+                "set name = {0}, image_path = {1}, " +
+                "old_price = {2}, current_price = {3}, " +
+                "description = {4}, updated_at = CURRENT_TIMESTAMP, category_id = {5} " +
                 "where link = {6}", item.Name, item.ImagePath,
                 item.OldPrice, item.CurrentPrice, item.Description, item.CategoryId, item.Link);
         }

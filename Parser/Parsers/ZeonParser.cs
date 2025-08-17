@@ -53,7 +53,7 @@ namespace ZeonService.Parser.Parsers
                             var product = await zeonProductParser.Parse(productsGridCell, parentCategoryId);
                             if (await productRepository.Create(product) == -1)
                                 await productRepository.Update(product);
-                            await Task.Delay(500);
+                            //await Task.Delay(500);
                         }
                     }
 
@@ -61,14 +61,13 @@ namespace ZeonService.Parser.Parsers
                     {
                         currentSubcategory = await zeonCategoryParser.Parse(subcategoryIndexCell, parentCategoryId);
                         var currentSubcategoryId = await catgoryRepository.Create(currentSubcategory);
-                        if (currentSubcategoryId == -1L) continue;
                         categories.Push(currentSubcategoryId);
 
                         zeonPages.Push(await ZeonPage.TryCreate(await htmlLoader.Download(currentSubcategory.Link)));
-                        await Task.Delay(500);
+                        //await Task.Delay(500);
                     }
                 }
-                await Task.Delay(500);
+                //await Task.Delay(500);
             }
         }
     }

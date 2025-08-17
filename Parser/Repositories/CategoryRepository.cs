@@ -32,8 +32,9 @@ namespace ZeonService.Parser.Repositories
 
         public async Task<long> Create(Category item)
         {
-            if (!await zeonDbContext.Categories
-                .FromSqlRaw("select * from categories where link = {0}", item.Link).AnyAsync())
+            long? categoryId = (await zeonDbContext.Categories
+                .FromSqlRaw("select * from categories where link = {0}", item.Link).FirstOrDefaultAsync())?.CategoryId;
+            if (categoryId == null)
             {
                 return zeonDbContext.Database
                     .SqlQueryRaw<long>("insert into categories (name, link, parent_category_id) values ({0}, {1}, {2}) returning category_id",
@@ -41,7 +42,8 @@ namespace ZeonService.Parser.Repositories
                     .AsEnumerable()
                     .First();
             }
-            else return -1;
+            else return categoryId
+                ?? throw new Exception("ABOBA");
         }
 
         public async Task Update(Category item)

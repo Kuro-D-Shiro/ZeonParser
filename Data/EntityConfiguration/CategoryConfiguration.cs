@@ -33,12 +33,6 @@ namespace ZeonService.Data.EntityConfiguration
                 .HasForeignKey(e => e.ParentCategoryId)
                 .HasConstraintName("category_parent_category_id_fkey");
 
-            /*entityBuilder.HasMany(e => e.Products)
-                .WithOne(p => p.Category)
-                .HasForeignKey(p => p.CategoryId)
-                .HasConstraintName("product_category_id_fkey")
-                .OnDelete(DeleteBehavior.Restrict);*/
-
             entityBuilder.HasIndex(e => e.ParentCategoryId)
                 .HasDatabaseName("idx_category_parent_category_id_fkey");
             entityBuilder.HasIndex(e => e.Name)
