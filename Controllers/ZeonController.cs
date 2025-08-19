@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.IO;
-using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
 using ZeonService.ZeonParserDTO;
 
@@ -8,9 +6,10 @@ namespace ZeonService.Controllers
 {
     [ApiController]
     [Route("api/parser/[controller]/[action]")]
-    public class ZeonController(IProductRepository productRepository) : ControllerBase
+    public class ZeonController(IProductRepository productRepository,
+        IFileGetter<Guid, (byte[], string)> imageGetter) : ControllerBase
     {
-        [HttpGet("{productName}")]
+        [HttpGet("{productName:required}")]
         public async Task<ActionResult<ProductWithCategoryDTO[]>> GetProductsByName([FromRoute] string productName)
         {
             var products = await productRepository.GetAllByName(productName);
@@ -27,18 +26,30 @@ namespace ZeonService.Controllers
             return Ok(productsWithCategoryDTO);
         }
 
-        [HttpGet("{imagePath}")]
-        public async Task<ActionResult> GetProductImage([FromRoute]string imagePath)
+        [HttpGet("{imagePath:guid:required}")]
+        public async Task<ActionResult> GetProductImage([FromRoute]Guid imagePath)
         {
-            var fullPath = $"ProductImages/{imagePath}";
-            
-            if (!System.IO.File.Exists(fullPath))
-                return NotFound();
+            var result = await imageGetter.Get(imagePath);
 
-            var imageBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
-            var ext = Path.GetExtension(imagePath).Replace(".", "");
+            if (result.IsFailed)
+                return NotFound(result.Errors.FirstOrDefault().Message);
 
+            var (imageBytes, ext) = result.Value;
             return File(imageBytes, $"image/{ext}");
+        }
+
+        [HttpGet("{categoryId:long:required}")]
+        public async Task<ActionResult<ProductWithoutCategoryDTO[]>> GetProductsByCategoryId([FromRoute]long categoryId)
+        {
+            var products = await productRepository.GetAllByCategoryId(categoryId);
+           
+            if (!products.Any())
+                return NotFound("У категории нет товаров");
+
+            var tasksProductsWithoutCategoryDTO = products.Select(p => ProductWithoutCategoryDTO.Create(p));
+            var productsWithoutCategoryDTO = await Task.WhenAll(tasksProductsWithoutCategoryDTO);
+
+            return Ok(productsWithoutCategoryDTO);
         }
     }
 }

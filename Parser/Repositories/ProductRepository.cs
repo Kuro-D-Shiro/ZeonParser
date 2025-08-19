@@ -47,7 +47,9 @@ namespace ZeonService.Parser.Repositories
 
         public async Task<IEnumerable<Product>> GetAllByCategoryId(long categoryId)
         {
-            
+            return await zeonDbContext.Products
+                .FromSqlRaw("select * from products where category_id = {0}", categoryId)
+                .ToListAsync();
         }
 
         public async Task<long> Create(Product item)

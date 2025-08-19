@@ -28,7 +28,7 @@ namespace ZeonService.Parser.Parsers
                 product.ImagePath = await downloadAndSaveImageService.DownloadAndSaveImage(
                     productElement.QuerySelector("img")?.GetAttribute("src")
                     ?? throw new Exception("Ссылка на картинку не нашлась"),
-                    Guid.NewGuid().ToString())
+                    Guid.NewGuid())
                     ?? throw new Exception("Картинка не нашлась");
             }
             product.CurrentPrice = productPrice.QuerySelector(".value")?.TextContent.ParsePriceFromString()

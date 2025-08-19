@@ -18,7 +18,7 @@ namespace ZeonService.ZeonParserDTO
 
         public static async Task<ProductWithCategoryDTO> Create(Product product)
         {
-            var imageLink = $"/api/parser/Zeon/GetProductImage/{product.ImagePath}";
+            var imageLink = $"/api/parser/Zeon/GetProductImage/{product.ImagePath.Split('.')[0]}";
 
             return new ProductWithCategoryDTO
             {

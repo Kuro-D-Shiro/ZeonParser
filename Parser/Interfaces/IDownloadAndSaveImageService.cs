@@ -2,6 +2,6 @@
 {
     public interface IDownloadAndSaveImageService
     {
-        Task<string?> DownloadAndSaveImage(string url, string path);
+        Task<string?> DownloadAndSaveImage(string url, Guid guid);
     }
 }

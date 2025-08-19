@@ -26,6 +26,7 @@ builder.Services.AddScoped<IZeonProductParser, ZeonProductParser>();
 builder.Services.AddScoped<IZeonCategoryParser, ZeonCategoryParser>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IFileGetter<Guid, (byte[], string)>, ImageGetter>();
 
 builder.Services.AddDbContext<ZeonDbContext>(options => options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
