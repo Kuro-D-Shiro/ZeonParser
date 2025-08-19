@@ -5,7 +5,8 @@ using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Parsers
 {
-    public class ZeonProductParser(IDownloadAndSaveImageService downloadAndSaveImageService) : IZeonProductParser
+    public class ZeonProductParser(IDownloadAndSaveImageService downloadAndSaveImageService,
+        IProductRepository productRepository) : IZeonProductParser
     {
         private readonly IDownloadAndSaveImageService downloadAndSaveImageService = downloadAndSaveImageService;
 
@@ -20,13 +21,16 @@ namespace ZeonService.Parser.Parsers
 
             product.Name = productInfo?.QuerySelector("a")?.TextContent.Trim()
                 ?? throw new Exception("У элемента не было текстового контента");
-            product.ImagePath = await downloadAndSaveImageService.DownloadAndSaveImage(
-                productElement.QuerySelector("img")?.GetAttribute("src")
-                ?? throw new Exception("Ссылка на картинку не нашлась"),
-                product.Name)
-                ?? throw new Exception("Картинка не нашлась");
             product.Link = productInfo.QuerySelector("a")?.GetAttribute("href")
                 ?? throw new Exception("У элемента не было аттрибута href");
+            if (!await productRepository.IsExists(product.Link))
+            {
+                product.ImagePath = await downloadAndSaveImageService.DownloadAndSaveImage(
+                    productElement.QuerySelector("img")?.GetAttribute("src")
+                    ?? throw new Exception("Ссылка на картинку не нашлась"),
+                    Guid.NewGuid().ToString())
+                    ?? throw new Exception("Картинка не нашлась");
+            }
             product.CurrentPrice = productPrice.QuerySelector(".value")?.TextContent.ParsePriceFromString()
                 ?? throw new Exception("Не нашёлся тег с ценой");
             product.OldPrice = productPrice.QuerySelector(".catalog-item-price-old")?.TextContent.ParsePriceFromString()

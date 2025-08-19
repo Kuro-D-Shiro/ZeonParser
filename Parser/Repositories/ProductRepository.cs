@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using System.Xml.Linq;
 using ZeonService.Data;
 using ZeonService.Models;
@@ -7,7 +6,7 @@ using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Repositories
 {
-    public class ProductRepository(ZeonDbContext zeonDbContext) : IRepository<Product>
+    public class ProductRepository(ZeonDbContext zeonDbContext) : IProductRepository
     { 
         private readonly ZeonDbContext zeonDbContext = zeonDbContext;
 
@@ -29,10 +28,31 @@ namespace ZeonService.Parser.Repositories
                 .FromSqlRaw("select * from products where name = {0}", name).FirstAsync();
         }
 
+        public async Task<bool> IsExists(string link)
+        {
+            return await zeonDbContext.Products
+                .FromSqlRaw("select * from products where link = {0}", link).AnyAsync();
+        }
+
+        public async Task<IEnumerable<Product>> GetAllByName(string name)
+        {
+            return await zeonDbContext.Products
+                .FromSqlRaw("select p.* from products p" +
+                " left join categories c" +
+                " on p.category_id = c.category_id" +
+                " where p.name like {0}", $"%{name}%")
+                .Include(p => p.Category)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Product>> GetAllByCategoryId(long categoryId)
+        {
+            
+        }
+
         public async Task<long> Create(Product item)
         {
-            if (!await zeonDbContext.Products
-                .FromSqlRaw("select * from products where link = {0}", item.Link).AnyAsync())
+            if (!await IsExists(item.Link))
             {
                 return zeonDbContext.Database
                     .SqlQueryRaw<long>("insert into products (name, link, image_path, old_price," +
@@ -56,11 +76,11 @@ namespace ZeonService.Parser.Repositories
         {
             await zeonDbContext.Database
                 .ExecuteSqlRawAsync("update products " +
-                "set name = {0}, image_path = {1}, " +
-                "old_price = {2}, current_price = {3}, " +
-                "description = {4}, updated_at = CURRENT_TIMESTAMP, category_id = {5} " +
-                "where link = {6}", item.Name, item.ImagePath,
-                item.OldPrice, item.CurrentPrice, item.Description, item.CategoryId, item.Link);
+                "set name = {0}, old_price = {1}, " +
+                "current_price = {2}, description = {3}, " +
+                "updated_at = CURRENT_TIMESTAMP, category_id = {4} " +
+                "where link = {5}", item.Name, item.OldPrice, item.CurrentPrice,
+                item.Description, item.CategoryId, item.Link);
         }
     }
 }

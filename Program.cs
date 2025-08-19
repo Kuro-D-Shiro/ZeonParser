@@ -24,8 +24,8 @@ builder.Services.AddScoped<IImageSaver, ImageToFileSaver>();
 builder.Services.AddScoped<IDownloadAndSaveImageService, ZeonDownloadAndSaveImageService>();
 builder.Services.AddScoped<IZeonProductParser, ZeonProductParser>();
 builder.Services.AddScoped<IZeonCategoryParser, ZeonCategoryParser>();
-builder.Services.AddScoped<IRepository<Category>, CategoryRepository>();
-builder.Services.AddScoped<IRepository<Product>, ProductRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 builder.Services.AddDbContext<ZeonDbContext>(options => options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();

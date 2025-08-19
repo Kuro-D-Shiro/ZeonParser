@@ -5,6 +5,7 @@
         IEnumerable<T> GetAll();
         Task<T> GetById(int id);
         Task<T> GetByName(string name);
+        Task<IEnumerable<T>> GetAllByName(string name);
         Task<long> Create(T item);
         Task Update(T item);
         Task Delete(int id);

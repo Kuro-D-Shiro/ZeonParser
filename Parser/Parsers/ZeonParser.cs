@@ -9,8 +9,8 @@ namespace ZeonService.Parser.Parsers
         IOptions<ZeonParserSettings> options,
         IZeonCategoryParser zeonCategoryParser,
         IZeonProductParser zeonProductParser,
-        IRepository<Category> catgoryRepository,
-        IRepository<Product> productRepository) : IZeonParser
+        ICategoryRepository catgoryRepository,
+        IProductRepository productRepository) : IZeonParser
     {
         private readonly IHtmlLoader htmlLoader = htmlLoader;
         private readonly ZeonParserSettings parserSettings = options.Value;

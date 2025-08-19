@@ -4,7 +4,7 @@ using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Parsers
 {
-    class ZeonCategoryParser(IRepository<Category> repository) : IZeonCategoryParser
+    class ZeonCategoryParser : IZeonCategoryParser
     {
         public async Task<Category> Parse(IElement categoryElement, long? parentCategoryId)
         {

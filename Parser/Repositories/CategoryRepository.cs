@@ -1,14 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 using ZeonService.Data;
 using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Repositories
 {
-    public class CategoryRepository(ZeonDbContext zeonDbContext) : IRepository<Category>
+    public class CategoryRepository(ZeonDbContext zeonDbContext) : ICategoryRepository
     {
         private readonly ZeonDbContext zeonDbContext = zeonDbContext;
 
@@ -30,6 +27,11 @@ namespace ZeonService.Parser.Repositories
                 .FromSqlRaw("select * from categories where name = {0}", name).FirstAsync();
         }
 
+        public async Task<IEnumerable<Category>> GetAllByName(string name)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<long> Create(Category item)
         {
             long? categoryId = (await zeonDbContext.Categories
@@ -37,13 +39,13 @@ namespace ZeonService.Parser.Repositories
             if (categoryId == null)
             {
                 return zeonDbContext.Database
-                    .SqlQueryRaw<long>("insert into categories (name, link, parent_category_id) values ({0}, {1}, {2}) returning category_id",
+                    .SqlQueryRaw<long>("insert into categories (name, link, parent_category_id)" +
+                    " values ({0}, {1}, {2}) returning category_id",
                     item.Name, item.Link, item.ParentCategoryId)
                     .AsEnumerable()
                     .First();
             }
-            else return categoryId
-                ?? throw new Exception("ABOBA");
+            else return categoryId.Value;
         }
 
         public async Task Update(Category item)
