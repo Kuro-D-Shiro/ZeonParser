@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using ZeonService.Data;
-using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
 using ZeonService.Parser.Parsers;
 using ZeonService.Parser.Repositories;
@@ -14,6 +14,11 @@ var config = new ConfigurationBuilder()
     .AddJsonFile("appsettings.Development.json")
     .AddEnvironmentVariables()
     .Build();
+
+var logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("../Logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
 builder.Services.Configure<ZeonParserSettings>(config.GetSection(nameof(ZeonParserSettings)));
 
@@ -34,6 +39,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Host.UseSerilog(logger);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -42,9 +49,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
+app.UseSerilogRequestLogging();
 
 app.MapControllers();
 

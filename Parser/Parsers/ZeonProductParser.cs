@@ -10,6 +10,7 @@ namespace ZeonService.Parser.Parsers
     {
         private readonly IDownloadAndSaveImageService downloadAndSaveImageService = downloadAndSaveImageService;
 
+        //Покрыть всё тут результатами
         public async Task<Product> Parse(IElement productElement, long? categoryId)
         {
             var product = new Product();

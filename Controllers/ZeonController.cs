@@ -32,7 +32,7 @@ namespace ZeonService.Controllers
             var result = await imageGetter.Get(imagePath);
 
             if (result.IsFailed)
-                return NotFound(result.Errors.FirstOrDefault().Message);
+                return StatusCode(418, result.Reasons);
 
             var (imageBytes, ext) = result.Value;
             return File(imageBytes, $"image/{ext}");

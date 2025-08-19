@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Options;
 using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
 using ZeonService.Parser.Settings;
@@ -47,9 +48,10 @@ namespace ZeonService.Parser.Parsers
 
                     if (!subcategoryIndexCells.Any())
                     {
-                        var productsGridCells = page.GetElementsBySelector(parserSettings.Selectors.ProductSelector);
+                        var productsGridCells = page.GetElementsBySelector(parserSettings.Selectors.ProductLinkSelector);
                         foreach (var productsGridCell in productsGridCells)
                         {
+
                             var product = await zeonProductParser.Parse(productsGridCell, parentCategoryId);
                             if (await productRepository.Create(product) == -1)
                                 await productRepository.Update(product);

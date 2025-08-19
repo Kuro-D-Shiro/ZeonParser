@@ -11,6 +11,6 @@
     {
         public string MainCategorySelector { get; set; }
         public string SubcategorySelector { get; set; }
-        public string ProductSelector { get; set; }
+        public string ProductLinkSelector { get; set; }
     }
 }

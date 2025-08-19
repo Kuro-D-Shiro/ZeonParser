@@ -9,6 +9,7 @@ namespace ZeonService.Parser.Services
         private readonly IImageDownloader imageDownloader = imageDownloader;
         private readonly IImageSaver imageSaver = imageSaver;
 
+        //Покрыть всё тут результатами
         public async Task<string?> DownloadAndSaveImage(string url, Guid guid)
         {
             string cleanPath = url.Split('?', '#')[0];
@@ -19,6 +20,8 @@ namespace ZeonService.Parser.Services
             byte[] imageBytes = await imageDownloader.Download(url);
             var imageFileName = $"{guid}{imageFormat}";
             var result = await imageSaver.Save(imageBytes, $"ProductImages/{imageFileName}");
+            if (result.IsFailed)
+            { }
             return imageFileName;
         }
     }
