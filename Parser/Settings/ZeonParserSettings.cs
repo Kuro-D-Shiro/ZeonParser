@@ -9,8 +9,8 @@
 
     public class Selectors
     {
-        public string MainCategorySelector { get; set; }
-        public string SubcategorySelector { get; set; }
-        public string ProductLinkSelector { get; set; }
+        public string MainCategory { get; set; }
+        public string Subcategory { get; set; }
+        public string ProductLink { get; set; }
     }
 }

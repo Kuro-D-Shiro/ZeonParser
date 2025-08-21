@@ -1,6 +1,7 @@
 ﻿using AngleSharp.Dom;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Text.Json;
 using ZeonService.Models;
 
 namespace ZeonService.Data.EntityConfiguration
@@ -45,10 +46,13 @@ namespace ZeonService.Data.EntityConfiguration
                 .IsRequired()
                 .HasColumnType("decimal(18,2)")
                 .HasColumnName("current_price");
-            entityBulder.Property(e => e.Description)
-                .IsRequired()
-                .HasMaxLength(500)
-                .HasColumnName("description");
+            entityBulder.Property(e => e.Specifications)
+                .HasColumnName("specifications")
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(v, (JsonSerializerOptions)null)
+                );
             entityBulder.Property(e => e.UpdatedAt)
                 .IsRequired()
                 .HasColumnName("updated_at");

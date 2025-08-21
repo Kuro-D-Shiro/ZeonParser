@@ -32,6 +32,16 @@ namespace ZeonService.Parser.Repositories
             throw new NotImplementedException();
         }
 
+        public async Task<IEnumerable<Category>> GetAllByCategoryId(long categoryId)
+        {
+            return await zeonDbContext.Categories
+                .FromSqlRaw("select cc.* from categories pc" +
+                " join categories cc" +
+                " on pc.category_id = cc.parent_category_id" +
+                " where pc.category_id = {0}", categoryId)
+                .ToListAsync();
+        }
+
         public async Task<long> Create(Category item)
         {
             long? categoryId = (await zeonDbContext.Categories

@@ -7,7 +7,7 @@ namespace ZeonService.ZeonParserDTO
         public long Id { get; set; }
         public string Name { get; set; }
         public string Link { get; set; }
-        public string Description { get; set; }
+        public Dictionary<string, Dictionary<string, string>> Specifications { get; set; }
         public string ImageLink { get; set; }
         public Decimal? OldPrice { get; set; }
         public Decimal CurrentPrice { get; set; }
@@ -25,7 +25,7 @@ namespace ZeonService.ZeonParserDTO
                 Id = product.ProductId,
                 Name = product.Name,
                 Link = product.Link,
-                Description = product.Description,
+                Specifications = product.Specifications,
                 ImageLink = imageLink,
                 OldPrice = product.OldPrice,
                 CurrentPrice = product.CurrentPrice,
@@ -36,20 +36,4 @@ namespace ZeonService.ZeonParserDTO
             };
         }
     }
-
-    /*public class ProductWithCategoryDTO(Product product)
-{
-    public long Id { get; set; } = product.ProductId;
-    public string Name { get; set; } = product.Name;
-    public string Link { get; set; } = product.Link;
-    public string Description { get; set; } = product.Description;
-    public byte[] Image { get; set; } = File.ReadAllBytes(product.ImagePath);
-    public Decimal? OldPrice { get; set; } = product.OldPrice;
-    public Decimal CurrentPrice { get; set; } = product.CurrentPrice;
-    public DateTime UpdatedAt { get; set; } = product.UpdatedAt;
-
-    public long CategoryId { get; set; } = product.Category.CategoryId;
-    public string CategoryName { get; set; } = product.Category.Name;
-    public string CategoryLink { get; set; } = product.Category.Link;
-}*/
 }

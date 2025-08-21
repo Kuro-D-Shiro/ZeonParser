@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Xml.Linq;
+using Npgsql;
+using NpgsqlTypes;
 using ZeonService.Data;
 using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
@@ -56,13 +57,17 @@ namespace ZeonService.Parser.Repositories
         {
             if (!await IsExists(item.Link))
             {
+                var specsParam = new NpgsqlParameter("p_specs", NpgsqlDbType.Jsonb)
+                {
+                    Value = item.Specifications
+                };
                 return zeonDbContext.Database
                     .SqlQueryRaw<long>("insert into products (name, link, image_path, old_price," +
-                    " current_price, description, updated_at, category_id)" +
-                    " values ({0}, {1}, {2}, {3}, {4}, {5}, CURRENT_TIMESTAMP, {6}) returning product_id",
+                    " current_price, specifications, updated_at, category_id)" +
+                    " values ({0}, {1}, {2}, {3}, {4}, @p_specs, CURRENT_TIMESTAMP, {6}) returning product_id",
                     item.Name, item.Link, item.ImagePath, item.OldPrice,
-                    item.CurrentPrice, item.Description, item.CategoryId)
-                    .AsEnumerable()
+                    item.CurrentPrice, specsParam, item.CategoryId)
+                    .ToList()
                     .First();
             }
             else return -1;
@@ -76,13 +81,17 @@ namespace ZeonService.Parser.Repositories
 
         public async Task Update(Product item)
         {
+            var specsParam = new NpgsqlParameter("p_specs", NpgsqlDbType.Jsonb)
+            {
+                Value = item.Specifications
+            };
             await zeonDbContext.Database
                 .ExecuteSqlRawAsync("update products " +
                 "set name = {0}, old_price = {1}, " +
-                "current_price = {2}, description = {3}, " +
+                "current_price = {2}, specifications = @p_specs, " +
                 "updated_at = CURRENT_TIMESTAMP, category_id = {4} " +
                 "where link = {5}", item.Name, item.OldPrice, item.CurrentPrice,
-                item.Description, item.CategoryId, item.Link);
+                specsParam, item.CategoryId, item.Link);
         }
     }
 }

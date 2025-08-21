@@ -1,4 +1,5 @@
 ﻿using AngleSharp.Dom;
+using AngleSharp.Html.Parser;
 using ZeonService.Models;
 using ZeonService.Parser.Extentions;
 using ZeonService.Parser.Interfaces;
@@ -15,32 +16,30 @@ namespace ZeonService.Parser.Parsers
         {
             var product = new Product();
 
-            IElement productInfo = productElement?.QuerySelector(".catalog-item-info")
-                ?? throw new Exception(productElement.OuterHtml);
-            IElement productPrice = productElement?.QuerySelector(".catalog-item-price-main")
+            IElement productPrice = productElement?.QuerySelector("div.item-panel-price2-block")
                 ?? throw new Exception(productElement.OuterHtml);
 
-            product.Name = productInfo?.QuerySelector("a")?.TextContent.Trim()
+            product.Name = productElement?.QuerySelector("h1.item-showcase-caption")?.TextContent.Trim()
                 ?? throw new Exception("У элемента не было текстового контента");
-            product.Link = productInfo.QuerySelector("a")?.GetAttribute("href")
-                ?? throw new Exception("У элемента не было аттрибута href");
+            product.Link = productElement.QuerySelector("meta[property=\"og:url\"]")?.GetAttribute("content")
+                ?? throw new Exception("У элемента не было аттрибута content");
             if (!await productRepository.IsExists(product.Link))
             {
                 product.ImagePath = await downloadAndSaveImageService.DownloadAndSaveImage(
-                    productElement.QuerySelector("img")?.GetAttribute("src")
+                    productElement.QuerySelector("a.item-gallery-current")?.GetAttribute("href")
                     ?? throw new Exception("Ссылка на картинку не нашлась"),
                     Guid.NewGuid())
                     ?? throw new Exception("Картинка не нашлась");
             }
-            product.CurrentPrice = productPrice.QuerySelector(".value")?.TextContent.ParsePriceFromString()
+            product.CurrentPrice = productPrice.QuerySelector("span.item-panel-price2-cur")?.TextContent.ParsePriceFromString()
                 ?? throw new Exception("Не нашёлся тег с ценой");
-            product.OldPrice = productPrice.QuerySelector(".catalog-item-price-old")?.TextContent.ParsePriceFromString()
+            string oldPriceString = productPrice.QuerySelector("span.item-panel-price2-old")?.TextContent;
+            product.OldPrice = String.IsNullOrEmpty(oldPriceString) ? null : oldPriceString.ParsePriceFromString();
+            product.Specifications = productElement.QuerySelector("div.tabcontrol-content-inner table.table-params")?.ParseSpecificationFromHtmlTable()
                 ?? null;
-            product.Description = productInfo.QuerySelector(".if-size-not-pc a")?.TextContent.Replace("[", "").Replace("]", "")
-                ?? throw new Exception("Не нашёлся тег с описанием");
             product.CategoryId = categoryId
                 ?? throw new Exception("Товар без категории быть не может");
-            
+
             return product;
         }
     }

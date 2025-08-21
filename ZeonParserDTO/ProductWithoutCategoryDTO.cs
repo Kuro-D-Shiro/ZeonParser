@@ -7,7 +7,7 @@ namespace ZeonService.ZeonParserDTO
         public long Id { get; set; }
         public string Name { get; set; }
         public string Link { get; set; }
-        public string Description { get; set; }
+        public Dictionary<string, Dictionary<string, string>> Specifications { get; set; } 
         public string ImageLink { get; set; }
         public Decimal? OldPrice { get; set; }
         public Decimal CurrentPrice { get; set; }
@@ -22,7 +22,7 @@ namespace ZeonService.ZeonParserDTO
                 Id = product.ProductId,
                 Name = product.Name,
                 Link = product.Link,
-                Description = product.Description,
+                Specifications = product.Specifications,
                 ImageLink = imageLink,
                 OldPrice = product.OldPrice,
                 CurrentPrice = product.CurrentPrice,
