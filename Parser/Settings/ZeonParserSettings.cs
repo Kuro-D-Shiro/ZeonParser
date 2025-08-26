@@ -12,5 +12,6 @@
         public string MainCategory { get; set; }
         public string Subcategory { get; set; }
         public string ProductLink { get; set; }
+        public string Pagination { get; set; }
     }
 }

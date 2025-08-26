@@ -1,8 +1,10 @@
-using AngleSharp;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Serilog;
 using ZeonService.Data;
+using ZeonService.Middleware;
 using ZeonService.Parser.Interfaces;
 using ZeonService.Parser.Parsers;
 using ZeonService.Parser.Repositories;
@@ -39,21 +41,43 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IFileGetter<Guid, (byte[], string)>, ImageGetter>();
 
-builder.Services.AddDbContext<ZeonDbContext>(options => options.UseNpgsql(dataSource));
+builder.Services.AddDbContextFactory<ZeonDbContext>(options => options.UseNpgsql(dataSource));
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddProblemDetails();
+builder.Services.AddHangfire(c => c
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(config.GetConnectionString("DefaultConnection"))));
+builder.Services.AddHangfireServer();
 
 builder.Host.UseSerilog(logger);
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionToJsonMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        DashboardTitle = "My Jobs Dashboard",
+        StatsPollingInterval = 5000,
+        AppPath = "/" 
+    });
 }
+
+app.Lifetime.ApplicationStarted.Register(() => 
+    RecurringJob.AddOrUpdate<ZeonParser>(
+        "full-parse",
+        zp => zp.Parse(),
+        "0 */6 * * *")
+);
 
 app.UseSerilogRequestLogging();
 

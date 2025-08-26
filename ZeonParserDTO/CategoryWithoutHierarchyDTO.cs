@@ -8,7 +8,7 @@ namespace ZeonService.ZeonParserDTO
         public string Name { get; set; }
         public string Link { get; set; }
 
-        public static async Task<CategoryWithoutHierarchyDTO> Create(Category category)
+        public static CategoryWithoutHierarchyDTO Create(Category category)
         {
             return new CategoryWithoutHierarchyDTO
             {

@@ -5,5 +5,7 @@ namespace ZeonService.Parser.Interfaces
     public interface IProductRepository : IRepository<Product>
     {
         Task<bool> IsExists(string link);
+
+        Task<IEnumerable<Product>> GetAllByName(string name);
     }
 }

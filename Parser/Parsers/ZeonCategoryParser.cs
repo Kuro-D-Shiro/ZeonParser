@@ -8,11 +8,13 @@ namespace ZeonService.Parser.Parsers
     {
         public async Task<Category> Parse(IElement categoryElement, long? parentCategoryId)
         {
-            var category = new Category();
-            category.Name = categoryElement.TextContent.Trim();
-            category.ParentCategoryId = parentCategoryId;
-            category.Link = categoryElement.QuerySelector("a")?.GetAttribute("href")
-                ?? throw new Exception("У блока категории не нашлось ссылки на неё."); //nullable ???
+            var category = new Category
+            {
+                Name = categoryElement.TextContent.Trim(),
+                ParentCategoryId = parentCategoryId,
+                Link = categoryElement.QuerySelector("a")?.GetAttribute("href")
+                    ?? throw new Exception("У блока категории не нашлось ссылки на неё.")
+            };
             return category;
         }
     }

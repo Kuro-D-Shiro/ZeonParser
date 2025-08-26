@@ -1,74 +1,101 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using ZeonService.Data;
 using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Repositories
 {
-    public class CategoryRepository(ZeonDbContext zeonDbContext) : ICategoryRepository
+    public class CategoryRepository(IDbContextFactory<ZeonDbContext> zeonDbContextFacory) : ICategoryRepository
     {
-        private readonly ZeonDbContext zeonDbContext = zeonDbContext;
+        private readonly IDbContextFactory<ZeonDbContext> zeonDbContextFacory = zeonDbContextFacory;
 
-        public IEnumerable<Category> GetAll()
+        public async Task<IEnumerable<Category>> GetAll()
         {
-            return zeonDbContext.Categories
-                .FromSqlRaw("select * from categories").AsEnumerable();
+            using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
+            {
+                return await zeonDbContext.Categories
+                    .FromSqlRaw("select * from categories").ToListAsync();
+            }
         }
 
-        public async Task<Category> GetById(int id)
+        public async Task<IEnumerable<Category>> GetMainCategories()
         {
-            return await zeonDbContext.Categories
-                .FromSqlRaw("select * from categories where category_id = {0}", id).FirstAsync();
+            using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
+            {
+                return await zeonDbContext.Categories
+                    .FromSqlRaw("select * from categories where parent_category_id is null")
+                    .ToListAsync();
+            }
+        }
+
+        public async Task<Category?> GetById(long id)
+        {
+            using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
+            {
+                return await zeonDbContext.Categories
+                    .FromSqlRaw("select * from categories where category_id = {0}", id).FirstOrDefaultAsync();
+            }
         }
 
         public async Task<Category> GetByName(string name)
         {
-            return await zeonDbContext.Categories
-                .FromSqlRaw("select * from categories where name = {0}", name).FirstAsync();
-        }
-
-        public async Task<IEnumerable<Category>> GetAllByName(string name)
-        {
-            throw new NotImplementedException();
+            using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
+            {
+                return await zeonDbContext.Categories
+                    .FromSqlRaw("select * from categories where name = {0}", name).FirstAsync();
+            }
         }
 
         public async Task<IEnumerable<Category>> GetAllByCategoryId(long categoryId)
         {
-            return await zeonDbContext.Categories
-                .FromSqlRaw("select cc.* from categories pc" +
-                " join categories cc" +
-                " on pc.category_id = cc.parent_category_id" +
-                " where pc.category_id = {0}", categoryId)
-                .ToListAsync();
+            using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
+            {
+                return await zeonDbContext.Categories
+                    .FromSqlRaw("select cc.* from categories pc" +
+                    " join categories cc" +
+                    " on pc.category_id = cc.parent_category_id" +
+                    " where pc.category_id = {0}", categoryId)
+                    .ToListAsync();
+            }
         }
 
         public async Task<long> Create(Category item)
         {
-            long? categoryId = (await zeonDbContext.Categories
-                .FromSqlRaw("select * from categories where link = {0}", item.Link).FirstOrDefaultAsync())?.CategoryId;
-            if (categoryId == null)
+            using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
             {
-                return zeonDbContext.Database
-                    .SqlQueryRaw<long>("insert into categories (name, link, parent_category_id)" +
-                    " values ({0}, {1}, {2}) returning category_id",
-                    item.Name, item.Link, item.ParentCategoryId)
-                    .AsEnumerable()
-                    .First();
+                long? categoryId = (await zeonDbContext.Categories
+                    .FromSqlRaw("select * from categories where link = {0}", item.Link).FirstOrDefaultAsync())?.CategoryId;
+                if (categoryId == null)
+                {
+                    return zeonDbContext.Database
+                        .SqlQueryRaw<long>("insert into categories (name, link, parent_category_id)" +
+                        " values ({0}, {1}, {2}) returning category_id",
+                        item.Name, item.Link, item.ParentCategoryId)
+                        .AsEnumerable()
+                        .First();
+                }
+                else return categoryId.Value;
             }
-            else return categoryId.Value;
         }
 
         public async Task Update(Category item)
         {
-            await zeonDbContext.Database
-                .ExecuteSqlRawAsync("update categories set" +
-                "name = {0} where link = {1}", item.Name, item.Link);
+            using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
+            {
+                await zeonDbContext.Database
+                    .ExecuteSqlRawAsync("update categories set" +
+                    "name = {0} where link = {1}", item.Name, item.Link);
+            }
         }
 
         public async Task Delete(int id)
         {
-            await zeonDbContext.Database
-                .ExecuteSqlRawAsync("delete from categories where category_id = {0}", id);
+            using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
+            {
+                await zeonDbContext.Database
+                    .ExecuteSqlRawAsync("delete from categories where category_id = {0}", id);
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Options;
 using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
@@ -13,94 +12,105 @@ namespace ZeonService.Parser.Parsers
         IOptions<ZeonParserSettings> options,
         IZeonCategoryParser zeonCategoryParser,
         IZeonProductParser zeonProductParser,
-        ICategoryRepository catgoryRepository,
+        ICategoryRepository categoryRepository,
         IProductRepository productRepository) : IZeonParser
     {
         private readonly IHtmlLoader htmlLoader = htmlLoader;
         private readonly ZeonParserSettings parserSettings = options.Value;
         private readonly IZeonCategoryParser zeonCategoryParser = zeonCategoryParser;
         private readonly IZeonProductParser zeonProductParser = zeonProductParser;
-        private readonly IRepository<Category> catgoryRepository = catgoryRepository;
+        private readonly IRepository<Category> categoryRepository = categoryRepository;
         private readonly IRepository<Product> productRepository = productRepository;
         private readonly HtmlParser htmlParser = new();
 
         public async Task Parse()
         {
-            var mainPage = await htmlParser.ParseDocumentAsync(await htmlLoader.Download(parserSettings.Url));
-            var mainCategoryElements = mainPage.QuerySelectorAll(parserSettings.Selectors.MainCategory).Skip(5);
+            var mainPageDoc = await LoadDocument(parserSettings.Url);
+            var mainCategoryElements = SelectMainCategories(mainPageDoc);
 
             foreach (var mainCategoryElement in mainCategoryElements)
             {
-                var currentMainCategory = await zeonCategoryParser.Parse(mainCategoryElement, null);
+                var mainCategory = await zeonCategoryParser.Parse(mainCategoryElement, null);
+                var mainCategoryId = await categoryRepository.Create(mainCategory);
 
-                var currentMainCategoryId = await catgoryRepository.Create(currentMainCategory);
+                var firstPage = await LoadDocument(mainCategory.Link);
+                var pageStack = new Stack<IHtmlDocument>();
+                var categoryStack = new Stack<long>();
 
-                var mainCategoryPage = await htmlParser.ParseDocumentAsync(await htmlLoader.Download(currentMainCategory.Link));
+                pageStack.Push(firstPage);
+                categoryStack.Push(mainCategoryId);
 
-                Stack <IHtmlDocument> zeonPages = [];
-                zeonPages.Push(mainCategoryPage);
-                Stack<long> categories = [];
-                categories.Push(currentMainCategoryId);
-                Category currentSubcategory;
-
-                while (zeonPages.Count > 0)
-                {
-                    var page = zeonPages.Pop();
-                    var parentCategoryId = categories.Pop();
-
-                    var subcategoryIndexCells = page.QuerySelectorAll(parserSettings.Selectors.Subcategory);
-
-                    if (!subcategoryIndexCells.Any())
-                    {
-                        var productCardLinks = page.QuerySelectorAll(parserSettings.Selectors.ProductLink)
-                            .Select(el => el.GetAttribute("href"));
-
-                        IElement productCatd;
-                        foreach (var productCardLink in productCardLinks)
-                        {
-                            productCatd = (await htmlParser.ParseDocumentAsync
-                                (await htmlLoader.Download(productCardLink)))
-                                .DocumentElement;
-                            var product = await zeonProductParser.Parse(productCatd, parentCategoryId);
-                            if (await productRepository.Create(product) == -1)
-                                await productRepository.Update(product);
-                            //await Task.Delay(500);
-                        }
-
-                        var paginationPageLinks = page.QuerySelectorAll("span.paginator-pages a")
-                            .Select(el => el.GetAttribute("href"));
-
-                        foreach (var paginationPageLink in paginationPageLinks)
-                        {
-                            var paginationPage = await htmlParser.ParseDocumentAsync(await htmlLoader.Download(paginationPageLink));
-
-                            productCardLinks = paginationPage.QuerySelectorAll(parserSettings.Selectors.ProductLink)
-                                .Select(el => el.GetAttribute("href"));
-                            foreach (var productCardLink in productCardLinks)
-                            {
-                                productCatd = (await htmlParser.ParseDocumentAsync
-                                    (await htmlLoader.Download(productCardLink)))
-                                    .DocumentElement;
-                                var product = await zeonProductParser.Parse(productCatd, parentCategoryId);
-                                if (await productRepository.Create(product) == -1)
-                                    await productRepository.Update(product);
-                                //await Task.Delay(500);
-                            }
-                        }
-                    }
-
-                    foreach (var subcategoryIndexCell in subcategoryIndexCells)
-                    {
-                        currentSubcategory = await zeonCategoryParser.Parse(subcategoryIndexCell, parentCategoryId);
-                        var currentSubcategoryId = await catgoryRepository.Create(currentSubcategory);
-                        categories.Push(currentSubcategoryId);
-
-                        zeonPages.Push(await htmlParser.ParseDocumentAsync(await htmlLoader.Download(currentSubcategory.Link)));
-                        //await Task.Delay(500);
-                    }
-                }
-                //await Task.Delay(500);
+                await ProcessPagesRecursively(pageStack, categoryStack);
             }
+        }
+
+        private async Task ProcessPagesRecursively(Stack<IHtmlDocument> pages, Stack<long> categories)
+        {
+            while (pages.Count > 0)
+            {
+                var page = pages.Pop();
+                var parentCategoryId = categories.Pop();
+
+                var subcategoryCells = page.QuerySelectorAll(parserSettings.Selectors.Subcategory);
+                if (!subcategoryCells.Any())
+                    await ProcessProductListings(page, parentCategoryId);
+
+                foreach (var cell in subcategoryCells)
+                {
+                    var subcategory = await zeonCategoryParser.Parse(cell, parentCategoryId);
+                    var subcategoryId = await categoryRepository.Create(subcategory);
+
+                    var subPage = await LoadDocument(subcategory.Link);
+                    pages.Push(subPage);
+                    categories.Push(subcategoryId);
+                }
+            }
+        }
+
+        private async Task ProcessProductListings(IHtmlDocument page, long parentCategoryId)
+        {
+            await ProcessProductsOnPage(page, parentCategoryId);
+
+            var paginationLinks = page
+                .QuerySelectorAll(parserSettings.Selectors.Pagination)
+                .Select(a => a.GetAttribute("href"))
+                .Where(href => !string.IsNullOrEmpty(href));
+
+            foreach (var link in paginationLinks)
+            {
+                var pagedDoc = await LoadDocument(link);
+                await ProcessProductsOnPage(pagedDoc, parentCategoryId);
+            }
+        }
+
+        private async Task ProcessProductsOnPage(IHtmlDocument page, long parentCategoryId)
+        {
+            var productLinks = page
+                .QuerySelectorAll(parserSettings.Selectors.ProductLink)
+                .Select(el => el.GetAttribute("href"))
+                .Where(href => !string.IsNullOrEmpty(href));
+
+            foreach (var productLink in productLinks)
+            {
+                var productDoc = (await LoadDocument(productLink)).DocumentElement;
+                var product = await zeonProductParser.Parse(productDoc, parentCategoryId);
+                var newId = await productRepository.Create(product);
+                if (newId == -1)
+                    await productRepository.Update(product);
+            }
+        }
+
+        private async Task<IHtmlDocument> LoadDocument(string url)
+        {
+            var content = await htmlLoader.Download(url);
+            return await htmlParser.ParseDocumentAsync(content);
+        }
+
+        private List<IElement> SelectMainCategories(IHtmlDocument doc)
+        {
+            var nodes = doc.QuerySelectorAll(parserSettings.Selectors.MainCategory).Skip(2).ToList();
+            nodes.RemoveRange(1, 2);
+            return nodes;
         }
     }
 }

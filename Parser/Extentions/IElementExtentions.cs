@@ -8,7 +8,7 @@ namespace ZeonService.Parser.Extentions
     {
         public static Dictionary<string, Dictionary<string, string>> ParseSpecificationFromHtmlTable(this IElement table)
         {
-            var specs = new Dictionary<string, Dictionary<string, string>>();
+            Dictionary<string, Dictionary<string, string>> specs = [];
 
             string currentGroup = null;
 
@@ -20,7 +20,7 @@ namespace ZeonService.Parser.Extentions
                     currentGroup = groupCell.TextContent.Trim();
                     if (!specs.ContainsKey(currentGroup))
                     {
-                        specs[currentGroup] = new Dictionary<string, string>();
+                        specs[currentGroup] = [];
                     }
                     continue;
                 }
@@ -35,11 +35,6 @@ namespace ZeonService.Parser.Extentions
             }
 
             return specs;
-            /*var options = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
-            return JsonSerializer.Serialize(specs, options);*/
         }
     }
 }

@@ -13,7 +13,7 @@ namespace ZeonService.ZeonParserDTO
         public Decimal CurrentPrice { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        public static async Task<ProductWithoutCategoryDTO> Create(Product product)
+        public static ProductWithoutCategoryDTO Create(Product product)
         {
             var imageLink = $"/api/parser/Zeon/GetProductImage/{product.ImagePath.Split('.')[0]}";
 
