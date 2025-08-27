@@ -1,0 +1,153 @@
+﻿using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
+using AngleSharp.Html.Parser;
+using Microsoft.Extensions.Options;
+using ZeonService.Parser.Interfaces;
+using ZeonService.Parser.Settings;
+
+namespace ZeonService.Parser.Parsers
+{
+    public class ZeonParser(IHtmlLoader htmlLoader,
+        IOptions<ZeonParserSettings> options,
+        IZeonCategoryParser zeonCategoryParser,
+        IZeonProductParser zeonProductParser,
+        ICategoryRepository categoryRepository,
+        IProductRepository productRepository,
+        ILogger<ZeonParser> logger) : IZeonParser
+    {
+        private readonly IHtmlLoader htmlLoader = htmlLoader;
+        private readonly ZeonParserSettings parserSettings = options.Value;
+        private readonly IZeonCategoryParser zeonCategoryParser = zeonCategoryParser;
+        private readonly IZeonProductParser zeonProductParser = zeonProductParser;
+        private readonly ICategoryRepository categoryRepository = categoryRepository;
+        private readonly IProductRepository productRepository = productRepository;
+        private readonly ILogger<ZeonParser> logger = logger;
+        private readonly HtmlParser htmlParser = new();
+
+        public async Task Parse()
+        {
+            var mainPageDoc = await LoadDocument(parserSettings.Url);
+            var mainCategoryElements = SelectMainCategories(mainPageDoc);
+
+            foreach (var mainCategoryElement in mainCategoryElements)
+            {
+                var mainCategory = await zeonCategoryParser.Parse(mainCategoryElement, null);
+                if (mainCategory == null)
+                {
+                    logger.LogError("Не удалось распарсить основную категорию.");
+                    continue;
+                }
+                logger.LogInformation("С сайта был получен объект основной категории:" +
+                    " {mainCategoryName}, {mainCategoryLink}.",
+                    mainCategory.Name,
+                    mainCategory.Link);
+                var mainCategoryId = await categoryRepository.Create(mainCategory); 
+
+                var firstPage = await LoadDocument(mainCategory.Link);
+                var pageStack = new Stack<IHtmlDocument>();
+                var categoryStack = new Stack<long>();
+
+                pageStack.Push(firstPage);
+                categoryStack.Push(mainCategoryId);
+
+                await ProcessSubcategoryPages(pageStack, categoryStack);
+
+                await Task.Delay(parserSettings.TimeoutBetweenRequestsMilliseconds);
+            }
+        }
+
+        private async Task ProcessSubcategoryPages(Stack<IHtmlDocument> pages, Stack<long> categories)
+        {
+            while (pages.Count > 0)
+            {
+                var page = pages.Pop();
+                var parentCategoryId = categories.Pop();
+
+                var subcategoryCells = page.QuerySelectorAll(parserSettings.Selectors.Subcategory);
+                if (!subcategoryCells.Any())
+                    await ProcessProductListings(page, parentCategoryId);
+
+                foreach (var cell in subcategoryCells)
+                {
+                    var subcategory = await zeonCategoryParser.Parse(cell, parentCategoryId);
+                    if (subcategory == null)
+                    {
+                        logger.LogError("Не удалось распарсить подкатегорию.");
+                        continue;
+                    }
+                    logger.LogInformation("С сайта был получен объект основной категории:" +
+                        " {subcategoryName}, {subcategoryLink}.",
+                        subcategory.Name,
+                        subcategory.Link);
+                    var subcategoryId = await categoryRepository.Create(subcategory); 
+
+                    var subPage = await LoadDocument(subcategory.Link); 
+                    pages.Push(subPage);
+                    categories.Push(subcategoryId);
+
+                    await Task.Delay(parserSettings.TimeoutBetweenRequestsMilliseconds);
+                }
+            }
+        }
+
+        private async Task ProcessProductListings(IHtmlDocument page, long parentCategoryId)
+        {
+            await ProcessProductsOnPage(page, parentCategoryId);
+
+            var paginationLinks = page
+                .QuerySelectorAll(parserSettings.Selectors.Pagination)
+                .Select(a => a.GetAttribute("href"))
+                .Where(href => !string.IsNullOrEmpty(href));
+
+            foreach (var link in paginationLinks)
+            {
+                var pagedDoc = await LoadDocument(link);
+                await ProcessProductsOnPage(pagedDoc, parentCategoryId);
+
+                await Task.Delay(parserSettings.TimeoutBetweenRequestsMilliseconds);
+            }
+        }
+
+        private async Task ProcessProductsOnPage(IHtmlDocument page, long parentCategoryId)
+        {
+            var productLinks = page
+                .QuerySelectorAll(parserSettings.Selectors.ProductLink)
+                .Select(el => el.GetAttribute("href"))
+                .Where(href => !string.IsNullOrEmpty(href));
+
+            foreach (var productLink in productLinks)
+            {
+                var productDoc = (await LoadDocument(productLink)).DocumentElement;
+ 
+                var (product, alreadyExists) = await zeonProductParser.Parse(productDoc, parentCategoryId);
+                if (product == null)
+                {
+                    logger.LogError("Не удалось распарсить товар.");
+                    continue;
+                }
+
+                logger.LogInformation("С сайта был получен объект товара:" +
+                    " {productName}, {productLink}.",
+                    product.Name,
+                    product.Link);
+                if (!alreadyExists)
+                    await productRepository.Create(product);
+                else
+                    await productRepository.Update(product);
+            }
+        }
+
+        private async Task<IHtmlDocument> LoadDocument(string url)
+        {
+            var content = await htmlLoader.Download(url);
+            return await htmlParser.ParseDocumentAsync(content);
+        }
+
+        private List<IElement> SelectMainCategories(IHtmlDocument doc)
+        {
+            var nodes = doc.QuerySelectorAll(parserSettings.Selectors.MainCategory).Skip(2).ToList();
+            nodes.RemoveRange(1, 2);
+            return nodes;
+        }
+    }
+}
