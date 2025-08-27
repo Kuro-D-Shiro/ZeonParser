@@ -1,12 +1,9 @@
-﻿using Microsoft.Extensions.Options;
-using ZeonService.Parser.Interfaces;
-using ZeonService.Parser.Settings;
+﻿using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Services
 {
-    public class HtmlLoader(IOptions<ZeonParserSettings> options, IHttpClientFactory httpClientFactory) : IHtmlLoader
+    public class HtmlLoader(IHttpClientFactory httpClientFactory) : IHtmlLoader
     {
-        private readonly ZeonParserSettings parserSettings = options.Value;
         private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
 
         public async Task<string> Download(string url)
