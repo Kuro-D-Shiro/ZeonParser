@@ -57,7 +57,7 @@ namespace ZeonService.Parser.Repositories
             {
                 return await zeonDbContext.Products
                     .FromSqlRaw("select * from products" +
-                    " where name like {0}", $"%{name}%")
+                    " where name ilike {0}", $"%{name}%")
                     .Include(p => p.Category)
                     .ToListAsync();
             }
@@ -77,22 +77,17 @@ namespace ZeonService.Parser.Repositories
         {
             using (var zeonDbContext = zeonDbContextFacory.CreateDbContext())
             {
-                if (!await IsExists(item.Link))
+                var specsParam = new NpgsqlParameter("p_specs", NpgsqlDbType.Jsonb)
                 {
-                    var specsParam = new NpgsqlParameter("p_specs", NpgsqlDbType.Jsonb)
-                    {
-                        Value = item.Specifications ?? (object)DBNull.Value
-                    };
-                    return zeonDbContext.Database
-                        .SqlQueryRaw<long>("insert into products (name, link, image_path, old_price," +
-                        " current_price, specifications, updated_at, category_id)" +
-                        " values ({0}, {1}, {2}, {3}, {4}, @p_specs, CURRENT_TIMESTAMP, {6}) returning product_id",
-                        item.Name, item.Link, item.ImagePath, item.OldPrice,
-                        item.CurrentPrice, specsParam, item.CategoryId)
-                        .ToList()
-                        .First();
-                }
-                else return -1;
+                    Value = item.Specifications ?? (object)DBNull.Value
+                };
+                await zeonDbContext.Database
+                    .ExecuteSqlRawAsync("insert into products (name, link, image_path, old_price," +
+                    " current_price, specifications, updated_at, category_id)" +
+                    " values ({0}, {1}, {2}, {3}, {4}, @p_specs, CURRENT_TIMESTAMP, {6})",
+                    item.Name, item.Link, item.ImagePath, item.OldPrice,
+                    item.CurrentPrice, specsParam, item.CategoryId);
+                return default;
             }
         }
 

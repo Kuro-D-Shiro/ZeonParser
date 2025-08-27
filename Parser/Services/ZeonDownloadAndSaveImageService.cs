@@ -1,4 +1,4 @@
-﻿using System.Net.Http;
+﻿using FluentResults;
 using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Services
@@ -8,20 +8,21 @@ namespace ZeonService.Parser.Services
     {
         private readonly IImageDownloader imageDownloader = imageDownloader;
         private readonly IImageSaver imageSaver = imageSaver;
-
-        //Покрыть всё тут результатами
-        public async Task<string?> DownloadAndSaveImage(string url, Guid guid)
+        
+        public async Task<Result<string>> DownloadAndSaveImage(string url, Guid guid)
         {
             string cleanPath = url.Split('?', '#')[0];
             var imageFormat = Path.GetExtension(cleanPath) ?? "";
             if (imageFormat == "")
-                return null;
+                return Result.Fail(new Error("Полученный url не является ссылкой на изображение."));
 
-            byte[] imageBytes = await imageDownloader.Download(url);
+            var imageBytes = await imageDownloader.Download(url);
             var imageFileName = $"{guid}{imageFormat}";
-            var result = await imageSaver.Save(imageBytes, $"ProductImages/{imageFileName}");
-            if (result.IsFailed)
-            { }
+
+            var imageSaveResult = await imageSaver.Save(imageBytes, $"ProductImages/{imageFileName}");
+            if (imageSaveResult.IsFailed)
+                return imageSaveResult;
+
             return imageFileName;
         }
     }

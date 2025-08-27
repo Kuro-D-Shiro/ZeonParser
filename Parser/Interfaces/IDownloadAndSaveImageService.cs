@@ -1,7 +1,9 @@
-﻿namespace ZeonService.Parser.Interfaces
+﻿using FluentResults;
+
+namespace ZeonService.Parser.Interfaces
 {
     public interface IDownloadAndSaveImageService
     {
-        Task<string?> DownloadAndSaveImage(string url, Guid guid);
+        Task<Result<string>> DownloadAndSaveImage(string url, Guid guid);
     }
 }

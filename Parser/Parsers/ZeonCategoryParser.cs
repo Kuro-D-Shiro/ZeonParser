@@ -1,21 +1,47 @@
 ﻿using AngleSharp.Dom;
+using FluentResults;
 using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
 
 namespace ZeonService.Parser.Parsers
 {
-    class ZeonCategoryParser : IZeonCategoryParser
+    class ZeonCategoryParser(ILogger<ZeonCategoryParser> logger) : IZeonCategoryParser
     {
-        public async Task<Category> Parse(IElement categoryElement, long? parentCategoryId)
+        private readonly ILogger<ZeonCategoryParser> logger = logger;
+        public async Task<Category?> Parse(IElement categoryElement, long? parentCategoryId)
         {
-            var category = new Category
+            var name = GetCategoryName(categoryElement);
+            if (name == null)
             {
-                Name = categoryElement.TextContent.Trim(),
-                ParentCategoryId = parentCategoryId,
-                Link = categoryElement.QuerySelector("a")?.GetAttribute("href")
-                    ?? throw new Exception("У блока категории не нашлось ссылки на неё.")
+                logger.LogError("Не удалось получить имя категории со страницы.");
+                return null; 
+            }
+
+            var link = GetCategoryLink(categoryElement);
+            if (link == null)
+            {
+                logger.LogError("Не удалось получить ссылку на категорию со страницы.");
+                return null;
+            }
+
+            return new Category
+            {
+                Name = name,
+                Link = link,
+                ParentCategoryId = parentCategoryId
             };
-            return category;
+        }
+        
+        private string? GetCategoryName(IElement categoryElement)
+        {
+            return categoryElement.TextContent.Trim() 
+                ?? null;
+        }
+
+        private string? GetCategoryLink(IElement categoryElement)
+        {
+            return categoryElement.QuerySelector("a")?.GetAttribute("href")
+                ?? null;
         }
     }
 }

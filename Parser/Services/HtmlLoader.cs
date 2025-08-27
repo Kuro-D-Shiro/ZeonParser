@@ -14,7 +14,6 @@ namespace ZeonService.Parser.Services
             string html = "";
             using (var httpClient = httpClientFactory.CreateClient(url))
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", parserSettings.UserAgent);
                 var response = await httpClient.GetAsync(url);
                 html = response != null && response.IsSuccessStatusCode ?
                     await response.Content.ReadAsStringAsync()
@@ -22,19 +21,5 @@ namespace ZeonService.Parser.Services
             }
             return html;
         }
-
-/*      public async Task<string> LoadPageByURL(string url)
-        {
-            string html = "";
-            using (var httpClient = httpClientFactory.CreateClient(url))
-            {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", parserSettings.UserAgent);
-                var response = await httpClient.GetAsync(url);
-                html = response != null && response.IsSuccessStatusCode ?
-                    await response.Content.ReadAsStringAsync()
-                    : "";
-            }
-            return html;
-        }*/
     }
 }

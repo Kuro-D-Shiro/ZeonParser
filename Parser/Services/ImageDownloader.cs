@@ -1,20 +1,24 @@
-﻿using Microsoft.Extensions.Options;
+﻿using FluentResults;
+using Microsoft.Extensions.Options;
 using ZeonService.Parser.Interfaces;
 using ZeonService.Parser.Settings;
 
 namespace ZeonService.Parser.Services
 {
-    public class ImageDownloader(IOptions<ZeonParserSettings> options, IHttpClientFactory httpClientFactory) : IImageDownloader
+    public class ImageDownloader(IHttpClientFactory httpClientFactory,
+        ILogger<ImageDownloader> logger) : IImageDownloader
     {
-        private readonly ZeonParserSettings parserSettings = options.Value;
         private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
+        private readonly ILogger<ImageDownloader> logger = logger;
 
         public async Task<byte[]> Download(string url)
         {
             using (var httpClient = httpClientFactory.CreateClient())
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", parserSettings.UserAgent);
-                return await httpClient.GetByteArrayAsync(url);
+                var imageBytes = await httpClient.GetByteArrayAsync(url);
+                if (!imageBytes.Any())
+                    logger.LogError("Не удалось загрузить картинку по url: {url}", url);
+                return imageBytes;
             }
         }
     }

@@ -1,13 +1,11 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using System.Net;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace ZeonService.Middleware
 {
-    public class ExceptionToJsonMiddleware(RequestDelegate next/*, ILogger logger*/) 
+    public class ExceptionToJsonMiddleware(RequestDelegate next, ILogger<ExceptionToJsonMiddleware> logger) 
     {
         private readonly RequestDelegate next = next;
-        //private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+        private readonly ILogger<ExceptionToJsonMiddleware> logger = logger;
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -23,7 +21,7 @@ namespace ZeonService.Middleware
 
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            //_logger.LogError(exception, "An unexpected error occurred.");
+            logger.LogError(exception, "An unexpected error occurred.");
 
             var (statusCode, title) = exception switch
             {

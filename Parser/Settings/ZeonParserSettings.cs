@@ -4,6 +4,7 @@
     {
         public string Url { get; set; }
         public string UserAgent { get; set; }
+        public int TimeoutBetweenRequestsMilliseconds { get; set; }
         public Selectors Selectors { get; set; }
     }
 

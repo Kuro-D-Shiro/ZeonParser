@@ -43,7 +43,11 @@ builder.Services.AddScoped<IFileGetter<Guid, (byte[], string)>, ImageGetter>();
 
 builder.Services.AddDbContextFactory<ZeonDbContext>(options => options.UseNpgsql(dataSource));
 builder.Services.AddControllers();
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("ZeonClient" ,client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(config.GetSection("ZeonParserSettings").GetValue<int>("TimeoutMinutes"));
+    client.DefaultRequestHeaders.Add("User-Agent", config.GetSection("ZeonParserSettings")["User-Agent"]);
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
@@ -51,7 +55,12 @@ builder.Services.AddHangfire(c => c
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
-    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(config.GetConnectionString("DefaultConnection"))));
+    .UsePostgreSqlStorage(options =>
+        options.UseNpgsqlConnection(config.GetConnectionString("DefaultConnection")),
+        new PostgreSqlStorageOptions
+        {
+            InvisibilityTimeout = TimeSpan.FromMinutes(90)
+        }));
 builder.Services.AddHangfireServer();
 
 builder.Host.UseSerilog(logger);

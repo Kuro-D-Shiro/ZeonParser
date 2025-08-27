@@ -1,8 +1,9 @@
-﻿using ZeonService.Models;
+﻿using FluentResults;
+using ZeonService.Models;
 
 namespace ZeonService.Parser.Interfaces
 {
-    public interface IZeonCategoryParser : IZeonElementParser<Category>
+    public interface IZeonCategoryParser : IZeonElementParser<Category?>
     {
     }
 }

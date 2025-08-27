@@ -2,7 +2,6 @@
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Microsoft.Extensions.Options;
-using ZeonService.Models;
 using ZeonService.Parser.Interfaces;
 using ZeonService.Parser.Settings;
 
@@ -13,14 +12,16 @@ namespace ZeonService.Parser.Parsers
         IZeonCategoryParser zeonCategoryParser,
         IZeonProductParser zeonProductParser,
         ICategoryRepository categoryRepository,
-        IProductRepository productRepository) : IZeonParser
+        IProductRepository productRepository,
+        ILogger<ZeonParser> logger) : IZeonParser
     {
         private readonly IHtmlLoader htmlLoader = htmlLoader;
         private readonly ZeonParserSettings parserSettings = options.Value;
         private readonly IZeonCategoryParser zeonCategoryParser = zeonCategoryParser;
         private readonly IZeonProductParser zeonProductParser = zeonProductParser;
-        private readonly IRepository<Category> categoryRepository = categoryRepository;
-        private readonly IRepository<Product> productRepository = productRepository;
+        private readonly ICategoryRepository categoryRepository = categoryRepository;
+        private readonly IProductRepository productRepository = productRepository;
+        private readonly ILogger<ZeonParser> logger = logger;
         private readonly HtmlParser htmlParser = new();
 
         public async Task Parse()
@@ -31,7 +32,16 @@ namespace ZeonService.Parser.Parsers
             foreach (var mainCategoryElement in mainCategoryElements)
             {
                 var mainCategory = await zeonCategoryParser.Parse(mainCategoryElement, null);
-                var mainCategoryId = await categoryRepository.Create(mainCategory);
+                if (mainCategory == null)
+                {
+                    logger.LogError("Не удалось распарсить основную категорию.");
+                    continue;
+                }
+                logger.LogInformation("С сайта был получен объект основной категории:" +
+                    " {mainCategoryName}, {mainCategoryLink}.",
+                    mainCategory.Name,
+                    mainCategory.Link);
+                var mainCategoryId = await categoryRepository.Create(mainCategory); 
 
                 var firstPage = await LoadDocument(mainCategory.Link);
                 var pageStack = new Stack<IHtmlDocument>();
@@ -40,11 +50,13 @@ namespace ZeonService.Parser.Parsers
                 pageStack.Push(firstPage);
                 categoryStack.Push(mainCategoryId);
 
-                await ProcessPagesRecursively(pageStack, categoryStack);
+                await ProcessSubcategoryPages(pageStack, categoryStack);
+
+                await Task.Delay(parserSettings.TimeoutBetweenRequestsMilliseconds);
             }
         }
 
-        private async Task ProcessPagesRecursively(Stack<IHtmlDocument> pages, Stack<long> categories)
+        private async Task ProcessSubcategoryPages(Stack<IHtmlDocument> pages, Stack<long> categories)
         {
             while (pages.Count > 0)
             {
@@ -58,11 +70,22 @@ namespace ZeonService.Parser.Parsers
                 foreach (var cell in subcategoryCells)
                 {
                     var subcategory = await zeonCategoryParser.Parse(cell, parentCategoryId);
-                    var subcategoryId = await categoryRepository.Create(subcategory);
+                    if (subcategory == null)
+                    {
+                        logger.LogError("Не удалось распарсить подкатегорию.");
+                        continue;
+                    }
+                    logger.LogInformation("С сайта был получен объект основной категории:" +
+                        " {subcategoryName}, {subcategoryLink}.",
+                        subcategory.Name,
+                        subcategory.Link);
+                    var subcategoryId = await categoryRepository.Create(subcategory); 
 
-                    var subPage = await LoadDocument(subcategory.Link);
+                    var subPage = await LoadDocument(subcategory.Link); 
                     pages.Push(subPage);
                     categories.Push(subcategoryId);
+
+                    await Task.Delay(parserSettings.TimeoutBetweenRequestsMilliseconds);
                 }
             }
         }
@@ -80,6 +103,8 @@ namespace ZeonService.Parser.Parsers
             {
                 var pagedDoc = await LoadDocument(link);
                 await ProcessProductsOnPage(pagedDoc, parentCategoryId);
+
+                await Task.Delay(parserSettings.TimeoutBetweenRequestsMilliseconds);
             }
         }
 
@@ -93,9 +118,21 @@ namespace ZeonService.Parser.Parsers
             foreach (var productLink in productLinks)
             {
                 var productDoc = (await LoadDocument(productLink)).DocumentElement;
-                var product = await zeonProductParser.Parse(productDoc, parentCategoryId);
-                var newId = await productRepository.Create(product);
-                if (newId == -1)
+ 
+                var (product, alreadyExists) = await zeonProductParser.Parse(productDoc, parentCategoryId);
+                if (product == null)
+                {
+                    logger.LogError("Не удалось распарсить товар.");
+                    continue;
+                }
+
+                logger.LogInformation("С сайта был получен объект товара:" +
+                    " {productName}, {productLink}.",
+                    product.Name,
+                    product.Link);
+                if (!alreadyExists)
+                    await productRepository.Create(product);
+                else
                     await productRepository.Update(product);
             }
         }

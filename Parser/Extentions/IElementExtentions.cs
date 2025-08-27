@@ -1,12 +1,10 @@
 ﻿using AngleSharp.Dom;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Text.Json;
 
 namespace ZeonService.Parser.Extentions
 {
     public static class IElementExtentions
     {
-        public static Dictionary<string, Dictionary<string, string>> ParseSpecificationFromHtmlTable(this IElement table)
+        public static Dictionary<string, Dictionary<string, string>>? ParseSpecificationFromHtmlTable(this IElement table)
         {
             Dictionary<string, Dictionary<string, string>> specs = [];
 
