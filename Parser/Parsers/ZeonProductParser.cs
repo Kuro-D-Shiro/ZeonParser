@@ -108,18 +108,12 @@ namespace ZeonService.Parser.Parsers
 
         private decimal? GetCurrentProductPrice(IElement priceElement)
         {
-            decimal? currentPrice = priceElement.QuerySelector("span.item-panel-price2-cur")?.TextContent
-                .ParsePriceFromString()
-                ?? null;
-            if (currentPrice == null)
-                return null;
-            return currentPrice;
+            return priceElement.QuerySelector("span.item-panel-price2-cur")?.TextContent.ParsePriceFromString();
         }
 
         private decimal? GetOldProductPrice(IElement priceElement)
         {
-            string oldPriceString = priceElement.QuerySelector("span.item-panel-price2-old")?.TextContent;
-            return String.IsNullOrEmpty(oldPriceString) ? null : oldPriceString.ParsePriceFromString();
+            return priceElement.QuerySelector("span.item-panel-price2-old")?.TextContent.ParsePriceFromString();
         }
     }
 }

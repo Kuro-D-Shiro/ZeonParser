@@ -16,7 +16,7 @@ namespace ZeonService.Parser.Services
             using (var httpClient = httpClientFactory.CreateClient())
             {
                 var imageBytes = await httpClient.GetByteArrayAsync(url);
-                if (!imageBytes.Any())
+                if (!imageBytes.Any() || imageBytes == null)
                     logger.LogError("Не удалось загрузить картинку по url: {url}", url);
                 return imageBytes;
             }

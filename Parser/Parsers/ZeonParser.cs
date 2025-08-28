@@ -27,6 +27,7 @@ namespace ZeonService.Parser.Parsers
         public async Task Parse()
         {
             var mainPageDoc = await LoadDocument(parserSettings.Url);
+            if (mainPageDoc == null) return;
             var mainCategoryElements = SelectMainCategories(mainPageDoc);
 
             foreach (var mainCategoryElement in mainCategoryElements)
@@ -44,6 +45,8 @@ namespace ZeonService.Parser.Parsers
                 var mainCategoryId = await categoryRepository.Create(mainCategory); 
 
                 var firstPage = await LoadDocument(mainCategory.Link);
+                if (firstPage == null) continue;
+
                 var pageStack = new Stack<IHtmlDocument>();
                 var categoryStack = new Stack<long>();
 
@@ -81,7 +84,9 @@ namespace ZeonService.Parser.Parsers
                         subcategory.Link);
                     var subcategoryId = await categoryRepository.Create(subcategory); 
 
-                    var subPage = await LoadDocument(subcategory.Link); 
+                    var subPage = await LoadDocument(subcategory.Link);
+                    if (subPage == null) continue;
+
                     pages.Push(subPage);
                     categories.Push(subcategoryId);
 
@@ -102,6 +107,8 @@ namespace ZeonService.Parser.Parsers
             foreach (var link in paginationLinks)
             {
                 var pagedDoc = await LoadDocument(link);
+                if (pagedDoc == null) continue;
+
                 await ProcessProductsOnPage(pagedDoc, parentCategoryId);
 
                 await Task.Delay(parserSettings.TimeoutBetweenRequestsMilliseconds);
@@ -117,7 +124,8 @@ namespace ZeonService.Parser.Parsers
 
             foreach (var productLink in productLinks)
             {
-                var productDoc = (await LoadDocument(productLink)).DocumentElement;
+                var productDoc = (await LoadDocument(productLink))?.DocumentElement;
+                if (productDoc == null) continue;
  
                 var (product, alreadyExists) = await zeonProductParser.Parse(productDoc, parentCategoryId);
                 if (product == null)
@@ -137,9 +145,14 @@ namespace ZeonService.Parser.Parsers
             }
         }
 
-        private async Task<IHtmlDocument> LoadDocument(string url)
+        private async Task<IHtmlDocument?> LoadDocument(string url)
         {
             var content = await htmlLoader.Download(url);
+            if (String.IsNullOrEmpty(content))
+            {
+                logger.LogError("Не получилось получить html страницу по url: {url}.", url);
+                return null;
+            }
             return await htmlParser.ParseDocumentAsync(content);
         }
 
