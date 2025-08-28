@@ -4,7 +4,8 @@ project.lock.json
 .DS_Store
 *.pyc
 nupkg/
-ProductImages/
+ProductImages/*
+!ProductImages/.gitkeeep
 *.http
 
 # Visual Studio Code
