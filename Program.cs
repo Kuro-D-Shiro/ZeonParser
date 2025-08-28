@@ -85,7 +85,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     RecurringJob.AddOrUpdate<ZeonParser>(
         "full-parse",
         zp => zp.Parse(),
-        "0 */6 * * *")
+        Cron.Daily(2))
 );
 
 app.UseSerilogRequestLogging();
