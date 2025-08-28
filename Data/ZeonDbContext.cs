@@ -12,7 +12,6 @@ namespace ZeonService.Data
         public ZeonDbContext(DbContextOptions<ZeonDbContext> options)
             : base(options)
         {
-            //Database.EnsureDeleted();
             //Database.EnsureCreated();
         }
 
