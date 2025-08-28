@@ -5,6 +5,14 @@
 # Клонирование репозитория
 git clone https://github.com/Kuro-D-Shiro/ZeonParser.git
 ```
+В файле /Data/ZeonDbContext.cs:
+```csharp
+public ZeonDbContext(DbContextOptions<ZeonDbContext> options)
+    : base(options)
+{
+    Database.EnsureCreated(); //при первом запуске, далее можно закомментировать
+}
+```
 ## Возможности
 + Парсинг категорий с сохранением иерархии (родительские/дочерние);
 + Сбор данных о товарах: названия, цен, описания, изображения;
