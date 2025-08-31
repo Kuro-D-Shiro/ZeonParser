@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ZeonService.Data;
@@ -11,9 +12,11 @@ using ZeonService.Data;
 namespace ZeonService.Migrations
 {
     [DbContext(typeof(ZeonDbContext))]
-    partial class ZeonDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250831130135_Fulltext_Indexes")]
+    partial class Fulltext_Indexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,8 +59,8 @@ namespace ZeonService.Migrations
                     b.HasIndex("Name")
                         .HasDatabaseName("idx_category_name");
 
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gist");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gist_trgm_ops" });
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("ParentCategoryId")
                         .HasDatabaseName("idx_category_parent_category_id_fkey");
@@ -124,8 +127,8 @@ namespace ZeonService.Migrations
                     b.HasIndex("Name")
                         .HasDatabaseName("idx_product_name");
 
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gist");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gist_trgm_ops" });
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
 
                     b.ToTable("products", null, t =>
                         {

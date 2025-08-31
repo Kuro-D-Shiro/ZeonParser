@@ -68,6 +68,8 @@ namespace ZeonService.Data.EntityConfiguration
             entityBulder.HasIndex(e => e.CategoryId)
                 .HasDatabaseName("idx_product_category_id_fkey");
             entityBulder.HasIndex(e => e.Name)
+                .HasMethod("gist")
+                .HasOperators("gist_trgm_ops")
                 .HasDatabaseName("idx_product_name");
         }
     }
