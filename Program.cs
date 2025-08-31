@@ -85,7 +85,8 @@ app.Lifetime.ApplicationStarted.Register(() =>
     RecurringJob.AddOrUpdate<ZeonParser>(
         "full-parse",
         zp => zp.Parse(),
-        Cron.Daily(2))
+        Cron.Daily(2),
+         new RecurringJobOptions { TimeZone = TimeZoneInfo.Local })
 );
 
 app.UseSerilogRequestLogging();
